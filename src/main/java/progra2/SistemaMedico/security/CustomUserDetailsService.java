@@ -11,20 +11,23 @@ import progra2.SistemaMedico.repositorio.UsuarioRepositorio;
 // sevicio para cargar detalles del usuario desde DB
     @Service
     @RequiredArgsConstructor
+
+    /*esta clase implementa de la interface UserDetailService que es la interface se seguridad de spring de
+     la cual solo necesita saber contrase;a cifrada, permisos y si la cuenta ya esta habilitda */
     public class CustomUserDetailsService implements UserDetailsService {
 
         private final UsuarioRepositorio repo;
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("🔍 Buscando usuario con username: " + username);
+        System.out.println("[Buscando] usuario con username: " + username);
 
         return repo.findByUsername(username)
                 .map(usuario -> {
-                    System.out.println("Usuario encontrado: " + usuario.getUsername());
-                    System.out.println("Password en BD: " + usuario.getPassword());
-                    System.out.println(" Activo: " + usuario.getActivo());
-                    System.out.println("Rol: " + usuario.getRol());
+                    // NUNCA imprimir la contrasena (ni el hash) en consola.
+                    System.out.println("Usuario encontrado: " + usuario.getUsername()
+                            + " | activo=" + usuario.getActivo()
+                            + " | rol=" + usuario.getRol());
 
                     return org.springframework.security.core.userdetails.User
                             .withUsername(usuario.getUsername())
@@ -34,8 +37,8 @@ import progra2.SistemaMedico.repositorio.UsuarioRepositorio;
                             .build();
                 })
                 .orElseThrow(() -> {
-                    System.err.println("❌ Usuario NO encontrado: " + username);
-                    return new UsernameNotFoundException("Usuario no encontrado: " + username);
+                    System.err.println("[Usuario NO encontrado:] " + username);
+                    return new UsernameNotFoundException("[Usuario no encontrado:] " + username);
                 });
     }
     }

@@ -1,0 +1,212 @@
+/* ============================================================
+   Sistema Informatico Hospitalario - hoja de estilos unica
+   Todas las vistas enlazan este archivo. Para cambiar la
+   identidad visual del sistema completo, se editan las
+   variables de :root y nada mas.
+   ============================================================ */
+
+:root {
+    --primary-color: #0A1F44;   /* azul marino profundo */
+    --primary-hover: #16305F;
+    --accent-color:  #2E5C9A;
+    --success-color: #198754;
+    --danger-color:  #dc3545;
+    --warning-color: #f0ad4e;
+    --light-bg:      #f0f2f5;
+    --muted-text:    #6c757d;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--light-bg) 0%, #e9ecef 100%);
+}
+
+/* ------------------------------------------------------------
+   Bootstrap no conoce nuestras variables: sus clases traen el
+   azul #0d6efd quemado. Aqui las sobrescribimos para que todo
+   el sistema use el marino sin tener que cambiar cada plantilla.
+   ------------------------------------------------------------ */
+.bg-primary        { background-color: var(--primary-color) !important; }
+.text-primary      { color: var(--primary-color) !important; }
+.border-primary    { border-color: var(--primary-color) !important; }
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.navbar-dark.bg-dark { background-color: var(--primary-color) !important; }
+.table-dark          { --bs-table-bg: var(--primary-color); }
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(46, 92, 154, 0.25);
+}
+
+a { color: var(--accent-color); }
+a:hover { color: var(--primary-hover); }
+
+.page-link { color: var(--accent-color); }
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* ---------------------- Portal publico ---------------------- */
+.navbar-brand { font-weight: 700; font-size: 1.5rem; }
+
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #061530 100%);
+    color: white;
+    padding: 5rem 0;
+    margin-bottom: 3rem;
+}
+
+.info-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+    overflow: hidden;
+}
+.info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+}
+.info-card .card-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #061530 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.info-list { list-style: none; padding: 0; margin: 0; }
+.info-list li {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+}
+.info-list li:last-child { border-bottom: none; }
+.info-list li i {
+    color: var(--accent-color);
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.btn-agendar {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #061530 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+.btn-agendar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(10, 31, 68, 0.35);
+}
+
+.stats-section { background: white; padding: 3rem 0; margin-top: 3rem; }
+.stat-item { text-align: center; padding: 2rem; }
+.stat-number { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
+.stat-label  { color: var(--muted-text); font-size: 1.1rem; }
+
+/* ------------------------- Login --------------------------- */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.login-container { max-width: 450px; width: 100%; padding: 2rem; }
+.login-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.1);
+    overflow: hidden;
+}
+.login-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #061530 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+.login-header i { font-size: 3rem; margin-bottom: 1rem; }
+.login-body { padding: 2rem; }
+.form-floating > label { color: var(--muted-text); }
+
+.btn-login {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #061530 100%);
+    border: none;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+.btn-login:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(10, 31, 68, 0.35);
+}
+.btn-login:disabled { opacity: .55; }
+
+.alert { border-radius: 10px; }
+
+.divider { text-align: center; margin: 1.5rem 0; position: relative; }
+.divider::before, .divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: #dee2e6;
+}
+.divider::before { left: 0; }
+.divider::after  { right: 0; }
+
+.back-link {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+.back-link:hover { color: var(--primary-hover); }
+
+/* ------------------- Panel administrativo ------------------- */
+.sidebar {
+    background-color: var(--primary-color);
+    min-height: 100vh;
+    width: 250px;
+}
+.sidebar .nav-link {
+    color: rgba(255,255,255,.85);
+    border-radius: 6px;
+    padding: .55rem .75rem;
+}
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background-color: rgba(255,255,255,.12);
+    color: #fff;
+}
+.sidebar .submenu .nav-link {
+    font-size: .9rem;
+    padding-left: 1.75rem;
+    color: rgba(255,255,255,.7);
+}

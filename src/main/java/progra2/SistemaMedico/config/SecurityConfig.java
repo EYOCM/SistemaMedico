@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,8 +29,6 @@ import progra2.SistemaMedico.security.JwtAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
 
-        /*indica que  la clase es de configuracion indica que los metodos estaran marcados
-        con anotation @Bean los cuales se utilizaran para crear y configurar los objetos requeridos en la aplicacion*/
         @Configuration
         @EnableWebSecurity
         @EnableMethodSecurity
@@ -45,31 +45,49 @@ import java.util.List;
                         .csrf(csrf -> csrf.disable())
                         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                         .authorizeHttpRequests(auth -> auth
-                                // AGREGA "/procesar-login" a las rutas públicas
-                                .requestMatchers("/", "/login", "/registro", "/verificar-dpi", "/procesar-registro", "/procesar-login", "/css/**", "/js/**").permitAll()
+                                .requestMatchers("/", "/login", "/admin/login", "/registro", "/verificar-dpi", "/procesar-registro", "/procesar-login", "/css/**", "/js/**").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/api/usuarios/registrar").permitAll()
                                 .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
                                 .requestMatchers("/admin/**").hasAnyRole("ADMINISTRADOR")
-                                .requestMatchers("/paciente/**", "/citas/**").hasAnyRole("PACIENTE", "ADMINISTRADOR")
+                                .requestMatchers("/paciente/**", "/citas/**", "/pago/**").hasAnyRole("PACIENTE", "ADMINISTRADOR")
                                 .requestMatchers("/dashboard").authenticated()
+                                .requestMatchers("/recepcion/**").hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
+                                .requestMatchers("/caja/**").hasAnyRole("CAJERO", "ADMINISTRADOR")
+                                .requestMatchers("/enfermeria/**").hasAnyRole("ENFERMERO", "ADMINISTRADOR")
+                                .requestMatchers("/medico/**").hasAnyRole("MEDICO", "ADMINISTRADOR")
+                                .requestMatchers("/laboratorio/**").hasAnyRole("LABORATORISTA", "ADMINISTRADOR")
+                                .requestMatchers("/farmacia/**").hasAnyRole("FARMACEUTICO", "ADMINISTRADOR")
+                                .requestMatchers("/inventario/**").hasAnyRole("FARMACEUTICO", "ADMINISTRADOR")
                                 .anyRequest().authenticated()
                         )
+
                         .formLogin(form -> form
                                 .loginPage("/login")
-                                // CAMBIA ESTO: Pon una URL que tu formulario HTML NO use, para que Spring NO lo intercepte
-                                .loginProcessingUrl("/autenticar-spring")
-                                .successHandler((request, response, authentication) -> {
-                                    if (authentication.getAuthorities().stream()
-                                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRADOR"))) {
-                                        response.sendRedirect("/admin/dashboard");
-                                    } else {
-                                        response.sendRedirect("/paciente/dashboard");
-                                    }
-                                })
-                                .failureUrl("/login?error=true")
                                 .permitAll()
-                        );
+                        )
+                        .logout(logout -> logout
+                                .logoutUrl("/logout")
+                                // FA09 - CU-00 INICIO
+                                // CU-00 FA09: el paciente vuelve al login del portal; el personal, al del panel administrativo
+                                .logoutSuccessHandler((request, response, authentication) -> {
+                                    boolean paciente = authentication != null && authentication.getAuthorities().stream()
+                                            .anyMatch(a -> "ROLE_PACIENTE".equals(a.getAuthority()));
+                                    response.sendRedirect(paciente ? "/login?logout=true" : "/admin/login?logout=true");
+                                })
+                                // FA09 - CU-00 FINAL
+                                .invalidateHttpSession(true)
+                                .deleteCookies("JSESSIONID")
+                                .permitAll()
+                        )
+
+                        .sessionManagement(session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // permite sesiones
+                                .sessionFixation().migrateSession()                       // previene fijacion de sesion
+                        )
+                        .securityContext(sc -> sc.securityContextRepository(securityContextRepository())) // Guarda el contexto en sesión HTTP
+                        .authenticationProvider(authenticationProvider())
+                        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
             }
@@ -97,6 +115,10 @@ import java.util.List;
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);
                 return source;
+            }
+            @Bean
+            public SecurityContextRepository securityContextRepository() {
+                return new HttpSessionSecurityContextRepository();
             }
 
         }

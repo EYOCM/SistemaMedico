@@ -12,6 +12,7 @@ public interface ICitaService {
     List<UsuarioDTO> obtenerMedicosDisponibles(Long sucursalId, Long especialidadId);
     List<String> obtenerHorariosDisponibles(Long medicoId, LocalDate fecha);
     CitaDTO agendarCita(ApiResponse.SolicitudCitaDTO solicitudCitaDTO);
-    List<CitaDTO> obenerCitasPorPaciente(Long pacienteId);
+    List<CitaDTO> obtenerCitasPorPaciente(Long pacienteId);
+    CitaDTO obtenerPorId(Long id);
 
 }

@@ -5,10 +5,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import progra2.SistemaMedico.model.enums.AppointmentStatus;
+import progra2.SistemaMedico.model.enums.Prioridad;
+import progra2.SistemaMedico.model.enums.TipoSeguimiento;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -73,6 +77,30 @@ public class Cita {
     @UpdateTimestamp
     private LocalDateTime fechaActualizacion;
 
+    @Column
+    private LocalDateTime horaLlegada;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Prioridad prioridad;
+
     @Column(length = 500)
     private String observaciones;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private TipoSeguimiento tipoSeguimiento;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "consulta_origen_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Consulta consultaOrigen;
+
+    @Column
+    private Boolean recordatorioEnviado;
+
+    @Version
+    private Long version;
+
 }

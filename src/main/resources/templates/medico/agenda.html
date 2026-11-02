@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Médica</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        #calendario { background: #fff; padding: 1rem; border-radius: .5rem; }
+        .fc .fc-toolbar-title { font-size: 1.25rem; text-transform: capitalize; }
+        .fc-event { cursor: pointer; }
+        .fc .dia-elegido { background: rgba(139, 92, 246, .12) !important; }
+        .leyenda span { display: inline-flex; align-items: center; gap: .35rem; margin-right: 1rem; font-size: .85rem; }
+        .leyenda i { width: .8rem; height: .8rem; border-radius: 50%; display: inline-block; }
+        #popover { position: absolute; z-index: 1060; width: 320px; display: none; }
+        #panelTareas { transition: all .2s; }
+        .tarea.completada .tarea-titulo { text-decoration: line-through; color: #6c757d; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid px-4">
+        <span class="navbar-brand"><i class="fas fa-calendar-days me-2"></i>Agenda Médica</span>
+        <div class="d-flex gap-2">
+            <a th:href="@{/medico}" class="btn btn-outline-light btn-sm"><i class="fas fa-user-doctor me-1"></i>Consultas</a>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 mb-5" id="agenda"
+     th:attr="data-base=@{/medico/agenda},data-hoy=${hoy},data-color=${colorEvento}">
+
+    <!-- FB PASO 8 - CU-16 INICIO -->
+    <div id="mensajes"></div>
+    <!-- FB PASO 8 - CU-16 FINAL -->
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div>
+            <h2 class="mb-0">Agenda Médica</h2>
+            <span class="text-muted" th:text="'Dr(a). ' + ${nombreMedico}">Dr(a). Carlos Méndez</span>
+        </div>
+        <div class="d-flex gap-2">
+            <!-- FB PASO 3 - CU-16 INICIO -->
+            <button type="button" class="btn btn-primary" id="btnNuevoEvento"><i class="fas fa-plus me-1"></i>Nuevo Evento</button>
+            <!-- FB PASO 3 - CU-16 FINAL -->
+            <!-- FB PASO 10 - CU-16 INICIO -->
+            <button type="button" class="btn btn-outline-secondary" id="btnTareas" aria-expanded="false">
+                <i class="fas fa-list-check me-1"></i>Tareas <span class="badge bg-secondary" id="conteoTareas">0</span>
+            </button>
+            <!-- FB PASO 10 - CU-16 FINAL -->
+        </div>
+    </div>
+
+    <!-- FB PASO 2 - CU-16 INICIO -->
+    <div class="leyenda mb-3">
+        <span><i style="background:#8b5cf6"></i>Evento</span>
+        <span><i style="background:#0d6efd"></i>Pagada</span>
+        <span><i style="background:#0dcaf0"></i>Paciente presente</span>
+        <span><i style="background:#20c997"></i>Signos vitales</span>
+        <span><i style="background:#ffc107"></i>En espera</span>
+        <span><i style="background:#fd7e14"></i>En consulta</span>
+        <span><i style="background:#d63384"></i>Evaluado</span>
+        <span><i style="background:#198754"></i>Finalizada</span>
+    </div>
+    <!-- FB PASO 2 - CU-16 FINAL -->
+
+    <div class="row g-3">
+        <!-- FB PASO 2 - CU-16 INICIO -->
+        <div class="col-12" id="columnaCalendario">
+            <div id="calendario" class="shadow-sm"></div>
+        </div>
+        <!-- FB PASO 2 - CU-16 FINAL -->
+
+        <!-- FA06 - CU-16 INICIO -->
+        <!-- FA06: panel lateral de tareas (TaskPanel) -->
+        <div class="col-lg-3 d-none" id="panelTareas">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>Tareas del <span id="tareasFecha">—</span></strong>
+                        <button type="button" class="btn-close" id="cerrarTareas" aria-label="Cerrar"></button>
+                    </div>
+                    <small class="text-muted"><span id="tareasPendientes">0</span> pendiente(s) ·
+                        <span id="tareasCompletadas">0</span> completada(s)</small>
+                    <div class="btn-group btn-group-sm w-100 mt-2" role="group" id="filtrosTareas">
+                        <button type="button" class="btn btn-outline-primary active" data-filtro="pendientes">Pendientes</button>
+                        <button type="button" class="btn btn-outline-primary" data-filtro="completadas">Completadas</button>
+                        <button type="button" class="btn btn-outline-primary" data-filtro="todas">Todas</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-sm btn-primary w-100 mb-3" id="btnNuevaTarea">
+                        <i class="fas fa-plus me-1"></i>Nueva Tarea
+                    </button>
+                    <form id="formTarea" class="border rounded p-2 mb-3 d-none" novalidate>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" name="titulo" placeholder="Título *" maxlength="200">
+                            <div class="invalid-feedback" data-error="titulo"></div>
+                        </div>
+                        <div class="mb-2">
+                            <textarea class="form-control form-control-sm" name="descripcion" rows="2" maxlength="1000" placeholder="Descripción (opcional)"></textarea>
+                            <div class="invalid-feedback" data-error="descripcion"></div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <select class="form-select form-select-sm" name="prioridad">
+                                    <option value="">Prioridad *</option>
+                                    <option th:each="p : ${prioridades}" th:value="${p}" th:text="${p.descripcion}"
+                                            th:selected="${p.name() == 'NORMAL'}">Normal</option>
+                                </select>
+                                <div class="invalid-feedback" data-error="prioridad"></div>
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" name="fechaLimite" title="Fecha límite">
+                                <div class="invalid-feedback" data-error="fechaLimite"></div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-success">Guardar</button>
+                            <button type="button" class="btn btn-sm btn-link" id="cancelarTarea">Cancelar</button>
+                        </div>
+                    </form>
+                    <ul class="list-group list-group-flush" id="listaTareas"></ul>
+                    <p class="text-muted small text-center mb-0 d-none" id="sinTareas">No hay tareas para este filtro.</p>
+                </div>
+            </div>
+        </div>
+        <!-- FA06 - CU-16 FINAL -->
+    </div>
+</div>
+
+<!-- FA01 - CU-16 INICIO -->
+<!-- FA01: detalle del evento o cita -->
+<div id="popover" class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-start gap-2" id="popoverCabecera">
+        <strong id="popoverTitulo" class="text-break"></strong>
+        <button type="button" class="btn-close btn-close-white" id="cerrarPopover" aria-label="Cerrar"></button>
+    </div>
+    <div class="card-body small">
+        <table class="table table-sm table-borderless mb-0" id="popoverDatos"></table>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2" id="popoverAcciones">
+        <!-- FA07 - CU-16 INICIO -->
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnEditar"><i class="fas fa-pen me-1"></i>Editar</button>
+        <!-- FA07 - CU-16 FINAL -->
+        <!-- FA04 - CU-16 INICIO -->
+        <button type="button" class="btn btn-sm btn-outline-danger" id="btnEliminar"><i class="fas fa-trash me-1"></i>Eliminar</button>
+        <!-- FA04 - CU-16 FINAL -->
+    </div>
+</div>
+<!-- FA01 - CU-16 FINAL -->
+
+<!-- FB PASOS 3-8 / FA07 - CU-16 INICIO -->
+<!-- Pasos 3 a 8 y FA07: formulario del evento -->
+<div class="modal fade" id="modalEvento" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" id="formEvento" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModal">Nuevo Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- FB PASOS 4-5 - CU-16 INICIO -->
+                <input type="hidden" name="id">
+                <div class="mb-3">
+                    <label class="form-label" for="eventoTitulo">Título <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="eventoTitulo" name="titulo" maxlength="200" placeholder="Ej. Capacitación en congreso médico">
+                    <div class="invalid-feedback" data-error="titulo"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="eventoDescripcion">Descripción</label>
+                    <textarea class="form-control" id="eventoDescripcion" name="descripcion" rows="2" maxlength="500"></textarea>
+                    <div class="d-flex justify-content-between">
+                        <div class="invalid-feedback d-block" data-error="descripcion"></div>
+                        <small class="text-muted text-nowrap"><span id="contadorDescripcion">0</span>/500</small>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-7">
+                        <label class="form-label" for="eventoTipo">Tipo de evento <span class="text-danger">*</span></label>
+                        <select class="form-select" id="eventoTipo" name="tipo">
+                            <option value="">Seleccione…</option>
+                            <option th:each="t : ${tipos}" th:value="${t}" th:text="${t.descripcion}">Reunión</option>
+                        </select>
+                        <div class="invalid-feedback" data-error="tipo"></div>
+                    </div>
+                    <div class="col-5 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="eventoTodoElDia" name="todoElDia">
+                            <label class="form-check-label" for="eventoTodoElDia">Todo el día</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="eventoInicio">Fecha de inicio <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="eventoInicio" name="inicio">
+                        <div class="invalid-feedback" data-error="inicio"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label" for="eventoFin">Fecha de fin <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="eventoFin" name="fin">
+                        <div class="invalid-feedback" data-error="fin"></div>
+                    </div>
+                </div>
+                <p class="small text-muted mt-3 mb-0"><i class="fas fa-circle-info me-1"></i>
+                    Mientras dure el evento no se ofrecerán sus horarios para citas.</p>
+                <!-- FB PASOS 4-5 - CU-16 FINAL -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="btnGuardarEvento">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- FB PASOS 3-8 / FA07 - CU-16 FINAL -->
+
+<!-- FA04 - CU-16 INICIO -->
+<!-- FA04: confirmación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body">
+                <p class="mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>¿Está seguro de eliminar este evento?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- FA04 - CU-16 FINAL -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/es.global.min.js"></script>
+<!-- FB PASOS 2-10 - CU-16 INICIO -->
+<script>
+    (function () {
+        const raiz = document.getElementById('agenda');
+        const BASE = raiz.dataset.base;
+        const $ = function (id) { return document.getElementById(id); };
+        const modalEvento = new bootstrap.Modal($('modalEvento'));
+        const modalEliminar = new bootstrap.Modal($('modalEliminar'));
+        const formEvento = $('formEvento');
+        const formTarea = $('formTarea');
+        let elegido = null;
+        let diaTareas = raiz.dataset.hoy;
+        let filtroTareas = 'pendientes';
+
+        // ---------- utilidades ----------
+        function mostrar(mensaje, tipo) {
+            if (!mensaje) return;
+            const alerta = document.createElement('div');
+            alerta.className = 'alert alert-' + tipo + ' alert-dismissible fade show';
+            alerta.innerHTML = '<span></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            alerta.querySelector('span').textContent = mensaje;
+            $('mensajes').prepend(alerta);
+        }
+
+        function enviar(url, datos) {
+            return fetch(BASE + url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: datos ? JSON.stringify(datos) : null
+            }).then(function (r) {
+                return r.json().catch(function () { return { ok: false, mensaje: 'Error inesperado (' + r.status + ').', errores: {} }; });
+            });
+        }
+
+        function limpiarErrores(form) {
+            form.querySelectorAll('.is-invalid').forEach(function (c) { c.classList.remove('is-invalid'); });
+            form.querySelectorAll('[data-error]').forEach(function (d) { d.textContent = ''; });
+        }
+
+        // FA03 - CU-16 INICIO
+        function pintarErrores(form, errores) {
+            Object.keys(errores || {}).forEach(function (campo) {
+                const control = form.elements[campo];
+                if (control) control.classList.add('is-invalid');
+                const div = form.querySelector('[data-error="' + campo + '"]');
+                if (div) div.textContent = errores[campo];
+            });
+        }
+        // FA03 - CU-16 FINAL
+
+        function fila(etiqueta, valor) {
+            if (valor === null || valor === undefined || valor === '') return '';
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<th class="text-muted fw-normal pe-2"></th><td class="text-break"></td>';
+            tr.children[0].textContent = etiqueta;
+            tr.children[1].textContent = valor;
+            return tr.outerHTML;
+        }
+
+        // FB PASO 2 / FA05 - CU-16 INICIO
+        // ---------- calendario (paso 2, FA05) ----------
+        const calendario = new FullCalendar.Calendar($('calendario'), {
+            locale: 'es',
+            initialView: 'dayGridMonth',
+            firstDay: 1,
+            height: 'auto',
+            nowIndicator: true,
+            slotMinTime: '07:00:00',
+            slotMaxTime: '20:00:00',
+            dayMaxEvents: 4,
+            // FA05 - CU-16 INICIO
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+            buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' },
+            // FA05 - CU-16 FINAL
+            events: BASE + '/eventos',
+            eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+            // FA01 - CU-16 INICIO
+            eventClick: function (info) {
+                info.jsEvent.preventDefault();
+                abrirPopover(info.event, info.jsEvent);
+            },
+            // FA01 - CU-16 FINAL
+            dateClick: function (info) {
+                elegirDia(info.dateStr.substring(0, 10));
+            },
+            datesSet: function (info) {
+                cerrarPopover();
+                if (info.view.type === 'timeGridDay') elegirDia(calendario.formatIso(info.start).substring(0, 10));
+                marcarDia();
+            }
+        });
+        calendario.render();
+        // FB PASO 2 / FA05 - CU-16 FINAL
+
+        function marcarDia() {
+            document.querySelectorAll('.dia-elegido').forEach(function (c) { c.classList.remove('dia-elegido'); });
+            const celda = document.querySelector('.fc-daygrid-day[data-date="' + diaTareas + '"]');
+            if (celda) celda.classList.add('dia-elegido');
+        }
+
+        // FA01 - CU-16 INICIO
+        // ---------- FA01: detalle ----------
+        function abrirPopover(evento, clic) {
+            const p = evento.extendedProps;
+            elegido = evento;
+            $('popoverTitulo').textContent = evento.title;
+            $('popoverCabecera').style.background = evento.backgroundColor;
+            $('popoverCabecera').style.color = '#fff';
+            let html = '';
+            if (p.clase === 'cita') {
+                html += fila('Paciente', p.paciente) + fila('Estado', p.estado) + fila('Cita', p.numero)
+                    + fila('Especialidad', p.especialidad) + fila('Sede', p.sede)
+                    + fila('Inicio', p.inicioTexto) + fila('Fin', p.finTexto) + fila('Motivo', p.descripcion);
+            } else {
+                html += fila('Tipo', p.tipoDescripcion) + fila('Inicio', p.inicioTexto) + fila('Fin', p.finTexto)
+                    + fila('Todo el día', p.todoElDia ? 'Sí' : 'No') + fila('Descripción', p.descripcion);
+            }
+            $('popoverDatos').innerHTML = html;
+            $('popoverAcciones').classList.toggle('d-none', p.clase !== 'evento');
+            const pop = $('popover');
+            pop.style.display = 'block';
+            const ancho = pop.offsetWidth;
+            const x = Math.min(clic.pageX + 10, window.scrollX + document.documentElement.clientWidth - ancho - 10);
+            pop.style.left = Math.max(10, x) + 'px';
+            pop.style.top = (clic.pageY + 10) + 'px';
+        }
+
+        function cerrarPopover() {
+            $('popover').style.display = 'none';
+        }
+
+        $('cerrarPopover').addEventListener('click', cerrarPopover);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarPopover(); });
+        // FA01 - CU-16 FINAL
+
+        // FB PASOS 3-5 / FA07 - CU-16 INICIO
+        // ---------- pasos 3 a 9 y FA07: formulario ----------
+        function cambiarTipoFechas() {
+            const todoElDia = $('eventoTodoElDia').checked;
+            ['eventoInicio', 'eventoFin'].forEach(function (id) {
+                const campo = $(id);
+                const valor = campo.value;
+                campo.type = todoElDia ? 'date' : 'datetime-local';
+                if (valor) campo.value = todoElDia ? valor.substring(0, 10) : (valor.length === 10 ? valor + 'T08:00' : valor);
+            });
+        }
+
+        function abrirFormulario(evento) {
+            formEvento.reset();
+            limpiarErrores(formEvento);
+            cerrarPopover();
+            const p = evento ? evento.extendedProps : null;
+            $('tituloModal').textContent = evento ? 'Editar Evento' : 'Nuevo Evento';
+            formEvento.elements.id.value = p ? p.eventoId : '';
+            $('eventoTitulo').value = evento ? evento.title : '';
+            $('eventoDescripcion').value = p && p.descripcion ? p.descripcion : '';
+            $('eventoTipo').value = p ? p.tipo : '';
+            $('eventoTodoElDia').checked = p ? p.todoElDia : false;
+            cambiarTipoFechas();
+            $('eventoInicio').value = p ? p.inicioForm : '';
+            $('eventoFin').value = p ? p.finForm : '';
+            contar();
+            modalEvento.show();
+        }
+
+        function contar() {
+            $('contadorDescripcion').textContent = $('eventoDescripcion').value.length;
+        }
+
+        $('btnNuevoEvento').addEventListener('click', function () { abrirFormulario(null); });
+        // FA07 - CU-16 INICIO
+        $('btnEditar').addEventListener('click', function () { abrirFormulario(elegido); });
+        // FA07 - CU-16 FINAL
+        $('eventoTodoElDia').addEventListener('change', cambiarTipoFechas);
+        $('eventoDescripcion').addEventListener('input', contar);
+        // FB PASOS 3-5 / FA07 - CU-16 FINAL
+
+        // FB PASOS 6-9 - CU-16 INICIO
+        formEvento.addEventListener('submit', function (e) {
+            e.preventDefault();
+            limpiarErrores(formEvento);
+            const f = formEvento.elements;
+            const datos = {
+                id: f.id.value ? Number(f.id.value) : null,
+                titulo: f.titulo.value,
+                descripcion: f.descripcion.value,
+                tipo: f.tipo.value,
+                todoElDia: f.todoElDia.checked,
+                inicio: f.inicio.value,
+                fin: f.fin.value
+            };
+            $('btnGuardarEvento').disabled = true;
+            enviar('/eventos', datos).then(function (r) {
+                $('btnGuardarEvento').disabled = false;
+                // FA03 - CU-16 INICIO
+                if (!r.ok) {
+                    pintarErrores(formEvento, r.errores);
+                    if (!r.errores || !Object.keys(r.errores).length) mostrar(r.mensaje, 'danger');
+                    return;
+                }
+                // FA03 - CU-16 FINAL
+                // FB PASOS 8-9 - CU-16 INICIO
+                modalEvento.hide();
+                mostrar(r.aviso, 'warning');
+                mostrar(r.mensaje, 'success');
+                calendario.refetchEvents();
+                // FB PASOS 8-9 - CU-16 FINAL
+            });
+        });
+        // FB PASOS 6-9 - CU-16 FINAL
+
+        // FA04 - CU-16 INICIO
+        // ---------- FA04: eliminar ----------
+        $('btnEliminar').addEventListener('click', function () { modalEliminar.show(); });
+        $('confirmarEliminar').addEventListener('click', function () {
+            enviar('/eventos/' + elegido.extendedProps.eventoId + '/eliminar').then(function (r) {
+                modalEliminar.hide();
+                cerrarPopover();
+                mostrar(r.mensaje, r.ok ? 'success' : 'danger');
+                calendario.refetchEvents();
+            });
+        });
+        // FA04 - CU-16 FINAL
+
+        // FA06 - CU-16 INICIO
+        // ---------- FA06: tareas ----------
+        function elegirDia(fecha) {
+            diaTareas = fecha;
+            formTarea.elements.fechaLimite.value = fecha;
+            marcarDia();
+            cargarTareas();
+        }
+
+        function cargarTareas() {
+            fetch(BASE + '/tareas?fecha=' + diaTareas + '&filtro=' + filtroTareas)
+                .then(function (r) { return r.json(); })
+                .then(pintarTareas);
+        }
+
+        function pintarTareas(d) {
+            $('tareasFecha').textContent = d.fechaTexto;
+            $('tareasPendientes').textContent = d.pendientes;
+            $('tareasCompletadas').textContent = d.completadas;
+            $('conteoTareas').textContent = d.pendientes;
+            const lista = $('listaTareas');
+            lista.innerHTML = '';
+            d.tareas.forEach(function (t) {
+                const li = document.createElement('li');
+                li.className = 'list-group-item px-0 tarea' + (t.completada ? ' completada' : '');
+                li.innerHTML =
+                    '<div class="d-flex gap-2 align-items-start">' +
+                    '  <input class="form-check-input mt-1" type="checkbox" title="Completar">' +
+                    '  <div class="flex-grow-1">' +
+                    '    <div class="tarea-titulo fw-semibold"></div>' +
+                    '    <div class="small text-muted tarea-descripcion"></div>' +
+                    '    <div class="small"><i class="fas fa-flag me-1"></i><span class="tarea-prioridad"></span>' +
+                    '      · <i class="far fa-calendar me-1"></i><span class="tarea-fecha"></span>' +
+                    '      · <span class="badge tarea-estado"></span></div>' +
+                    '  </div>' +
+                    '  <button type="button" class="btn btn-sm btn-link text-danger p-0" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+                    '</div>';
+                li.querySelector('input').checked = t.completada;
+                li.querySelector('.tarea-titulo').textContent = t.titulo;
+                li.querySelector('.tarea-descripcion').textContent = t.descripcion || '';
+                li.querySelector('.fa-flag').style.color = t.color;
+                li.querySelector('.tarea-prioridad').textContent = t.prioridadDescripcion;
+                li.querySelector('.tarea-fecha').textContent = t.fechaLimite;
+                const estado = li.querySelector('.tarea-estado');
+                estado.textContent = t.completada ? 'Completada' : 'Pendiente';
+                estado.classList.add(t.completada ? 'bg-success' : 'bg-secondary');
+                li.querySelector('input').addEventListener('change', function () {
+                    enviar('/tareas/' + t.id + '/estado').then(cargarTareas);
+                });
+                li.querySelector('button').addEventListener('click', function () {
+                    enviar('/tareas/' + t.id + '/eliminar').then(function (r) {
+                        mostrar(r.mensaje, r.ok ? 'success' : 'danger');
+                        cargarTareas();
+                    });
+                });
+                lista.appendChild(li);
+            });
+            $('sinTareas').classList.toggle('d-none', d.tareas.length > 0);
+        }
+        // FA06 - CU-16 FINAL
+
+        // FB PASO 10 - CU-16 INICIO
+        function alternarPanel(abrir) {
+            $('panelTareas').classList.toggle('d-none', !abrir);
+            $('columnaCalendario').className = abrir ? 'col-lg-9' : 'col-12';
+            $('btnTareas').setAttribute('aria-expanded', abrir);
+            $('btnTareas').classList.toggle('active', abrir);
+            calendario.updateSize();
+        }
+
+        $('btnTareas').addEventListener('click', function () {
+            alternarPanel($('panelTareas').classList.contains('d-none'));
+        });
+        $('cerrarTareas').addEventListener('click', function () { alternarPanel(false); });
+        // FB PASO 10 - CU-16 FINAL
+
+        // FA06 - CU-16 INICIO
+        document.querySelectorAll('#filtrosTareas [data-filtro]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                document.querySelectorAll('#filtrosTareas .active').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                filtroTareas = b.dataset.filtro;
+                cargarTareas();
+            });
+        });
+
+        $('btnNuevaTarea').addEventListener('click', function () {
+            formTarea.classList.remove('d-none');
+            formTarea.elements.titulo.focus();
+        });
+        $('cancelarTarea').addEventListener('click', function () {
+            formTarea.reset();
+            limpiarErrores(formTarea);
+            formTarea.elements.fechaLimite.value = diaTareas;
+            formTarea.classList.add('d-none');
+        });
+
+        formTarea.addEventListener('submit', function (e) {
+            e.preventDefault();
+            limpiarErrores(formTarea);
+            const f = formTarea.elements;
+            const datos = { titulo: f.titulo.value, descripcion: f.descripcion.value,
+                            prioridad: f.prioridad.value, fechaLimite: f.fechaLimite.value };
+            enviar('/tareas', datos).then(function (r) {
+                if (!r.ok) {
+                    pintarErrores(formTarea, r.errores);
+                    if (!r.errores || !Object.keys(r.errores).length) mostrar(r.mensaje, 'danger');
+                    return;
+                }
+                mostrar(r.mensaje, 'success');
+                const dia = datos.fechaLimite;
+                formTarea.reset();
+                formTarea.classList.add('d-none');
+                elegirDia(dia);
+            });
+        });
+        // FA06 - CU-16 FINAL
+
+        elegirDia(diaTareas);
+    })();
+</script>
+<!-- FB PASOS 2-10 - CU-16 FINAL -->
+</body>
+</html>

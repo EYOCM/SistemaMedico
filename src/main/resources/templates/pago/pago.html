@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago de Consulta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        /* Temporizador de reserva (CU-04 paso 1 / FA02) */
+        .temporizador {
+            font-size: 2.25rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;   /* los dígitos no "bailan" al cambiar */
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .temporizador.urgente { color: var(--danger-color); }
+        .barra-tiempo { height: 6px; }
+        .barra-tiempo .progress-bar { transition: width 1s linear; }
+        .total-pagar {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5 mb-5" style="max-width: 640px;">
+
+    <!-- Mensaje que llega por flash desde el paso 5 del CU-03 -->
+    <div th:if="${success}" class="alert alert-success">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+    </div>
+
+    <!--
+        FA02: banner oculto. El JavaScript lo muestra cuando el contador llega a 0.
+        El texto es literal del documento del CU-04.
+    -->
+    <!-- FA02 - CU-04 INICIO -->
+    <div id="bannerExpirado" class="alert alert-danger d-none" role="alert">
+        <i class="fas fa-clock me-2"></i>
+        El tiempo para confirmar su cita ha expirado. El horario seleccionado ha sido
+        liberado. Por favor, seleccione un nuevo horario. Será redirigido en unos segundos...
+    </div>
+    <!-- FA02 - CU-04 FINAL -->
+
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Pago de Consulta</h5>
+        </div>
+        <div class="card-body">
+
+            <!-- FB PASO 1 - CU-04 INICIO -->
+            <!-- ===================== Temporizador ===================== -->
+            <!--
+                El servidor escribe los segundos restantes en data-segundos.
+                El JS solo los muestra bajando; quien decide si la reserva
+                sigue vigente es el servidor (PagoController y, al cobrar, T-04-4).
+            -->
+            <div class="alert alert-info text-center mb-4" th:if="${cita.reservaSinVencimiento}">
+                <i class="fas fa-calendar-check me-1"></i>Cita de seguimiento: el horario ya está apartado, puede pagarla sin límite de tiempo.
+            </div>
+            <div class="text-center mb-4" th:unless="${cita.reservaSinVencimiento}">
+                <div class="text-muted small mb-1">Tiempo restante para completar el pago</div>
+                <div id="temporizador" class="temporizador"
+                     th:attr="data-segundos=${cita.segundosRestantes}, data-reintentar=@{/citas/reintentar/{id}(id=${cita.id})}">5:00</div>
+                <div class="progress barra-tiempo mt-3">
+                    <div id="barraTiempo" class="progress-bar bg-primary" role="progressbar"
+                         style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- ================= Resumen de la cita ================== -->
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">Resumen de la cita</h6>
+            <table class="table table-borderless mb-3">
+                <tr><th class="text-muted fw-normal" style="width: 40%">Número de cita</th>
+                    <td class="fw-semibold" th:text="${cita.numeroCita}">CITA-20260908-1234</td></tr>
+                <tr><th class="text-muted fw-normal">Médico</th>
+                    <td th:text="${cita.nombreMedico}">Dr. Juan Pérez</td></tr>
+                <tr><th class="text-muted fw-normal">Especialidad</th>
+                    <td th:text="${cita.nombreEspecialidad}">Cardiología</td></tr>
+                <tr><th class="text-muted fw-normal">Sede</th>
+                    <td th:text="${cita.nombreSucursal}">Sucursal Central</td></tr>
+                <tr><th class="text-muted fw-normal">Fecha</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy')}">01/01/2026</td></tr>
+                <tr><th class="text-muted fw-normal">Hora</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'HH:mm')}">08:00</td></tr>
+            </table>
+
+            <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-4">
+                <span class="fw-semibold">Total a pagar</span>
+                <!-- Formato Q1,500.00. Si la especialidad no tiene precio, se avisa en lugar de mostrar "Q". -->
+                <span class="total-pagar"
+                      th:text="${cita.monto != null} ? 'Q' + ${#numbers.formatDecimal(cita.monto, 1, 'COMMA', 2, 'POINT')} : 'Precio no configurado'">Q150.00</span>
+            </div>
+            <!-- FB PASO 1 - CU-04 FINAL -->
+
+            <!-- ============ Formulario "Datos de pago" (T-04-2) ============ -->
+            <!--
+                th:object="${pago}"  → el controlador DEBE poner un PagoDTO en el modelo
+                                       con el nombre "pago" (en el GET y en el POST).
+                novalidate           → apaga la validación del navegador: quien valida es
+                                       el servidor con Bean Validation (FA01).
+                id="formPago"        → el temporizador lo deshabilita al expirar.
+            -->
+            <!-- FB PASOS 2-7 - CU-04 INICIO -->
+            <form id="formPago" method="post" novalidate
+                  th:action="@{/pago/{id}(id=${cita.id})}" th:object="${pago}">
+
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Datos de pago</h6>
+
+                <!-- RNF-016: clave de idempotencia. La genera el GET; viaja oculta y es la misma
+                     en cada reenvío de este formulario. -->
+                <input type="hidden" name="claveIdempotencia" th:value="${claveIdempotencia}">
+
+                <!-- FA03 - CU-04 INICIO -->
+                <!-- Errores que no son de un campo concreto (p. ej. de la pasarela, T-04-4) -->
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <p class="mb-0" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
+                </div>
+                <!-- FA03 - CU-04 FINAL -->
+
+                <!-- FB PASO 3 - CU-04 INICIO -->
+                <!-- RN-CU04-01: número de tarjeta -->
+                <div class="mb-3">
+                    <label for="numeroTarjeta" class="form-label">Número de tarjeta</label>
+                    <input type="text" id="numeroTarjeta" th:field="*{numeroTarjeta}"
+                           class="form-control" inputmode="numeric" autocomplete="cc-number"
+                           maxlength="19" placeholder="Solo dígitos, sin espacios"
+                           th:classappend="${#fields.hasErrors('numeroTarjeta')} ? 'is-invalid'">
+                    <div class="invalid-feedback" th:errors="*{numeroTarjeta}"></div>
+                </div>
+                <!-- FB PASO 3 - CU-04 FINAL -->
+
+                <!-- FB PASO 4 - CU-04 INICIO -->
+                <!-- RN-CU04-02: nombre del titular (se pasa a mayúsculas al escribir) -->
+                <div class="mb-3">
+                    <label for="nombreTitular" class="form-label">Nombre del titular</label>
+                    <input type="text" id="nombreTitular" th:field="*{nombreTitular}"
+                           class="form-control text-uppercase" autocomplete="cc-name"
+                           maxlength="100" placeholder="COMO APARECE EN LA TARJETA"
+                           th:classappend="${#fields.hasErrors('nombreTitular')} ? 'is-invalid'">
+                    <div class="invalid-feedback" th:errors="*{nombreTitular}"></div>
+                </div>
+                <!-- FB PASO 4 - CU-04 FINAL -->
+
+                <div class="row">
+                    <!-- FB PASO 5 - CU-04 INICIO -->
+                    <!-- RN-CU04-03: vencimiento MM/AA (la "/" se inserta sola) -->
+                    <div class="col-6 mb-3">
+                        <label for="vencimiento" class="form-label">Vencimiento</label>
+                        <input type="text" id="vencimiento" th:field="*{vencimiento}"
+                               class="form-control" inputmode="numeric" autocomplete="cc-exp"
+                               maxlength="5" placeholder="MM/AA"
+                               th:classappend="${#fields.hasErrors('vencimiento')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{vencimiento}"></div>
+                    </div>
+                    <!-- FB PASO 5 - CU-04 FINAL -->
+
+                    <!-- FB PASO 6 - CU-04 INICIO -->
+                    <!-- RN-CU04-04 / RNF-013: CVV tipo password.
+                         Sin th:field a propósito: así el CVV nunca se vuelve a escribir
+                         en la página si el formulario regresa con errores. -->
+                    <div class="col-6 mb-3">
+                        <label for="cvv" class="form-label">CVV</label>
+                        <input type="password" id="cvv" name="cvv"
+                               class="form-control" inputmode="numeric" autocomplete="cc-csc"
+                               maxlength="4" placeholder="•••"
+                               th:classappend="${#fields.hasErrors('cvv')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{cvv}"></div>
+                    </div>
+                </div>
+
+                <!-- Nota de seguridad, paso 6 del CU-04 -->
+                <p class="small text-muted mb-4">
+                    <i class="fas fa-shield-halved me-1 text-success"></i>
+                    Tu información de pago está protegida. El CVV nunca se almacena ni se envía.
+                </p>
+                <!-- FB PASO 6 - CU-04 FINAL -->
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="/paciente/dashboard" class="btn btn-outline-secondary">Volver al portal</a>
+                    <!-- FB PASO 7 - CU-04 INICIO -->
+                    <button type="submit" id="btnPagar" class="btn btn-primary px-4"
+                            th:text="${cita.monto != null} ? 'Pagar Q' + ${#numbers.formatDecimal(cita.monto, 1, 'COMMA', 2, 'POINT')} : 'Pagar'">
+                        Pagar Q150.00
+                    </button>
+                    <!-- FB PASO 7 - CU-04 FINAL -->
+                </div>
+            </form>
+            <!-- FB PASOS 2-7 - CU-04 FINAL -->
+        </div>
+    </div>
+</div>
+
+<!-- FA02 - CU-04 INICIO -->
+<script>
+    (function () {
+        const RESERVA_TOTAL = 5 * 60;        // 5 minutos (RNF-019), para la barra
+        const ESPERA_REDIRECCION = 4000;     // FA02: redirigir después de 4 s
+        const reloj  = document.getElementById('temporizador');
+        const barra  = document.getElementById('barraTiempo');
+        const banner = document.getElementById('bannerExpirado');
+        if (!reloj) {
+            return;
+        }
+        const URL_RESERVA = reloj.dataset.reintentar;
+
+        const segundosIniciales = parseInt(reloj.dataset.segundos, 10) || 0;
+
+        // Se calcula contra una hora de fin fija y no restando 1 en cada vuelta:
+        // si el navegador pausa la pestaña en segundo plano, el setInterval se atrasa,
+        // pero Date.now() siempre dice la hora real.
+        const fin = Date.now() + segundosIniciales * 1000;
+        let intervalo = null;
+
+        function pintar(restantes) {
+            const min = Math.floor(restantes / 60);
+            const seg = restantes % 60;
+            reloj.textContent = min + ':' + String(seg).padStart(2, '0');
+
+            barra.style.width = Math.max(0, (restantes / RESERVA_TOTAL) * 100) + '%';
+
+            const urgente = restantes <= 60;   // último minuto en rojo
+            reloj.classList.toggle('urgente', urgente);
+            barra.classList.toggle('bg-danger', urgente);
+            barra.classList.toggle('bg-primary', !urgente);
+        }
+
+        function expirar() {
+            clearInterval(intervalo);
+            pintar(0);
+            banner.classList.remove('d-none');
+            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Cuando exista el formulario (T-04-2), se bloquea para que no se pueda enviar.
+            const form = document.getElementById('formPago');
+            if (form) {
+                form.querySelectorAll('input, button, select').forEach(el => el.disabled = true);
+            }
+
+            setTimeout(() => { window.location.href = URL_RESERVA; }, ESPERA_REDIRECCION);
+        }
+
+        function tick() {
+            const restantes = Math.max(0, Math.round((fin - Date.now()) / 1000));
+            if (restantes === 0) {
+                expirar();
+            } else {
+                pintar(restantes);
+            }
+        }
+
+        tick();                              // pintar de inmediato, sin esperar 1 s
+        if (segundosIniciales > 0) {
+            intervalo = setInterval(tick, 1000);
+        }
+    })();
+</script>
+<!-- FA02 - CU-04 FINAL -->
+
+<!-- FB PASOS 3-9 - CU-04 INICIO -->
+<script>
+    /*
+     * Ayudas de escritura del formulario (solo comodidad para el paciente).
+     * NO son validaciones: el servidor vuelve a revisar todo con Bean Validation.
+     */
+    (function () {
+        const form     = document.getElementById('formPago');
+        const numero   = document.getElementById('numeroTarjeta');
+        const titular  = document.getElementById('nombreTitular');
+        const venc     = document.getElementById('vencimiento');
+        const cvv      = document.getElementById('cvv');
+        if (!form) return;
+
+        // ---- Número de tarjeta: solo dígitos y enmascarado al perder el foco (RNF-012) ----
+        // El número real se guarda en data-real; en pantalla se ve •••• 1486.
+        function enmascarar() {
+            const real = numero.value.replace(/\D/g, '');
+            numero.dataset.real = real;
+            if (real.length >= 4) {
+                numero.value = '•••• •••• •••• ' + real.slice(-4);
+            }
+        }
+        function desenmascarar() {
+            if (numero.dataset.real !== undefined) {
+                numero.value = numero.dataset.real;
+            }
+        }
+        numero.addEventListener('input', () => {
+            numero.value = numero.value.replace(/\D/g, '');
+            delete numero.dataset.real;
+        });
+        numero.addEventListener('blur', enmascarar);
+        numero.addEventListener('focus', desenmascarar);
+        if (numero.value) enmascarar();      // si el formulario volvió con errores
+
+        // ---- Titular: mayúsculas mientras escribe (RN-CU04-02) ----
+        titular.addEventListener('input', () => {
+            titular.value = titular.value.toUpperCase();
+        });
+
+        // ---- Vencimiento: inserta la "/" sola después del mes (MM/AA) ----
+        venc.addEventListener('input', (e) => {
+            let d = venc.value.replace(/\D/g, '').slice(0, 4);
+            if (d.length >= 3 || (d.length === 2 && e.inputType !== 'deleteContentBackward')) {
+                d = d.slice(0, 2) + '/' + d.slice(2);
+            }
+            venc.value = d;
+        });
+
+        // ---- CVV: solo dígitos ----
+        cvv.addEventListener('input', () => {
+            cvv.value = cvv.value.replace(/\D/g, '');
+        });
+
+        // FB PASO 9 - CU-04 INICIO
+        // ---- Al enviar: mandar el número REAL y bloquear el doble clic (paso 9 del CU-04) ----
+        const btnPagar = document.getElementById('btnPagar');
+        form.addEventListener('submit', (e) => {
+            if (form.dataset.enviando) {          // segundo clic: se ignora
+                e.preventDefault();
+                return;
+            }
+            form.dataset.enviando = 'si';
+            desenmascarar();
+            btnPagar.disabled = true;
+            btnPagar.innerHTML =
+                '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Procesando pago...';
+        });
+        // FB PASO 9 - CU-04 FINAL
+    })();
+</script>
+<!-- FB PASOS 3-9 - CU-04 FINAL -->
+</body>
+</html>

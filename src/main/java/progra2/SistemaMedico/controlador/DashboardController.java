@@ -13,10 +13,15 @@ import progra2.SistemaMedico.model.Usuario;
 import progra2.SistemaMedico.model.enums.UserRol;
 import progra2.SistemaMedico.repositorio.UsuarioRepositorio;
 import progra2.SistemaMedico.security.CustomUserDetailsService;
+import progra2.SistemaMedico.servicios.CitaService;
+
+import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
 public class DashboardController {
+
+    private final CitaService citaService;
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
@@ -28,20 +33,24 @@ public class DashboardController {
         String username = authentication.getName();
         model.addAttribute("username", username);
 
-        // Aquí deberías obtener el rol del usuario desde tu servicio
-        // Por ahora, redirigimos según el rol que tengas en tu sistema
         return "dashboard";
     }
 
     @GetMapping("/admin/dashboard")
     public String adminDashboard(Model model) {
-        // Esta vista debe existir en: src/main/resources/templates/admin/dashboard.html
         return "admin/dashboard";
     }
 
+    // FB PASO 10 - CU-00 INICIO
     @GetMapping("/paciente/dashboard")
     public String pacienteDashboard(Model model) {
-        // Esta vista debe existir en: src/main/resources/templates/paciente/dashboard.html
         return "paciente/dashboard";
+    }
+    // FB PASO 10 - CU-00 FINAL
+
+    @GetMapping("/paciente/mis-citas")
+    public String misCitas(Principal principal, Model model) {
+        model.addAttribute("citas", citaService.misCitas(principal.getName()));
+        return "paciente/mis-citas";
     }
 }

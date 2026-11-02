@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora de movimientos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<nav th:replace="~{inventario/fragmentos :: barra}"></nav>
+
+<div class="container-fluid px-4 mb-5">
+    <th:block th:replace="~{inventario/fragmentos :: alertas}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-0">Bitácora de movimientos</h2>
+            <small class="text-muted">Del más reciente al más antiguo. Los despachos los registra el sistema (CU-11).</small>
+        </div>
+        <!-- FB PASO 3 - CU-15 INICIO -->
+        <a th:href="@{/inventario/movimientos/nuevo}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Nuevo movimiento</a>
+        <!-- FB PASO 3 - CU-15 FINAL -->
+    </div>
+
+    <!-- FB PASO 2 - CU-15 INICIO -->
+    <form method="get" th:action="@{/inventario/movimientos}" th:object="${filtro}" class="card card-body mb-3">
+        <input type="hidden" name="tam" th:value="${registros.size}">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="tipo">Tipo</label>
+                <select th:field="*{tipo}" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${tipos}" th:value="${t}" th:text="${t.descripcion}">Compra</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted" for="medicamentoId">Medicamento</label>
+                <select th:field="*{medicamentoId}" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="med : ${medicamentos}" th:value="${med.id}" th:text="${med.nombre}">Amoxicilina</option>
+                </select>
+            </div>
+            <div class="col-md-2" th:if="${alcance.administrador}">
+                <label class="form-label small text-muted" for="sucursalId">Sede</label>
+                <select th:field="*{sucursalId}" class="form-select">
+                    <option value="">Todas</option>
+                    <option th:each="s : ${sucursales}" th:value="${s.id}" th:text="${s.nombre}">Sede</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="referencia">Referencia</label>
+                <input type="text" th:field="*{referencia}" class="form-control" placeholder="FAC-…">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="usuario">Usuario</label>
+                <input type="text" th:field="*{usuario}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="desde">Desde</label>
+                <input type="date" th:field="*{desde}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="hasta">Hasta</label>
+                <input type="date" th:field="*{hasta}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <div class="form-check mb-2">
+                    <input type="checkbox" th:field="*{inactivos}" class="form-check-input">
+                    <label class="form-check-label small" th:for="${#ids.prev('inactivos')}">Incluir inactivos</label>
+                </div>
+            </div>
+            <div class="col-auto"><button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i>Filtrar</button></div>
+            <div class="col-auto"><a th:href="@{/inventario/movimientos}" class="btn btn-outline-secondary">Limpiar</a></div>
+        </div>
+    </form>
+    <!-- FB PASO 2 - CU-15 FINAL -->
+
+    <!-- FB PASO 2 - CU-15 INICIO -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle bg-white">
+            <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Medicamento</th>
+                <th>Sede</th>
+                <th class="text-end">Cantidad</th>
+                <th class="text-end">Stock ant.</th>
+                <th class="text-end">Stock nuevo</th>
+                <th class="text-end">Costo</th>
+                <th>Referencia</th>
+                <th>Usuario</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${registros.content}" th:classappend="${!m.activo} ? 'text-muted'">
+                <td th:text="${m.id}">1</td>
+                <td class="text-nowrap" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">21/10/2026 10:00</td>
+                <td><th:block th:replace="~{inventario/fragmentos :: tipo(${m})}"></th:block></td>
+                <td th:text="${m.medicamento}">Amoxicilina</td>
+                <td th:text="${m.sucursal}">Sede</td>
+                <td class="text-end"><th:block th:replace="~{inventario/fragmentos :: cantidad(${m})}"></th:block></td>
+                <td class="text-end" th:text="${m.stockAnterior}">5</td>
+                <td class="text-end fw-semibold" th:text="${m.stockNuevo}">105</td>
+                <td class="text-end text-nowrap" th:text="${m.costoUnitario != null} ? 'Q' + ${#numbers.formatDecimal(m.costoUnitario, 1, 'COMMA', 2, 'POINT')} : '—'">Q1.80</td>
+                <td th:text="${m.referencia} ?: '—'">FAC-001</td>
+                <td th:text="${m.usuario}">farmaceutico1</td>
+                <td>
+                    <span th:if="${m.activo}" class="badge bg-success">Activo</span>
+                    <span th:unless="${m.activo}" class="badge bg-secondary">Inactivo</span>
+                </td>
+                <td class="text-center text-nowrap">
+                    <a th:href="@{/inventario/movimientos/{id}(id=${m.id})}" class="btn btn-sm btn-outline-primary">Ver</a>
+                    <form th:replace="~{inventario/fragmentos :: estado(${m}, ${volver})}"></form>
+                </td>
+            </tr>
+            <!-- FA01 - CU-15 INICIO -->
+            <tr th:if="${registros.content.isEmpty()}">
+                <td colspan="13" class="text-center text-muted py-4">No se encontraron resultados.</td>
+            </tr>
+            <!-- FA01 - CU-15 FINAL -->
+            </tbody>
+        </table>
+    </div>
+    <!-- FB PASO 2 - CU-15 FINAL -->
+
+    <!-- FB PASO 2 - CU-15 INICIO -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <form method="get" th:action="@{/inventario/movimientos}" class="d-flex align-items-center gap-2" id="formTam">
+            <label class="small text-muted mb-0" for="tam">Elementos por página</label>
+            <select id="tam" name="tam" class="form-select form-select-sm" style="width:auto">
+                <option value="10" th:selected="${registros.size == 10}">10</option>
+                <option value="25" th:selected="${registros.size == 25}">25</option>
+                <option value="50" th:selected="${registros.size == 50}">50</option>
+            </select>
+        </form>
+        <span class="small text-muted">
+            <span th:text="${registros.totalElements}">0</span> registro(s) &mdash;
+            página <span th:text="${registros.number + 1}">1</span> de
+            <span th:text="${registros.totalPages > 0 ? registros.totalPages : 1}">1</span>
+        </span>
+        <nav th:if="${registros.totalPages > 1}">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" th:each="p : ${#numbers.sequence(1, registros.totalPages)}"
+                    th:classappend="${p == registros.number + 1} ? 'active'">
+                    <a class="page-link" href="#" th:attr="data-pagina=${p}" th:text="${p}">1</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <!-- FB PASO 2 - CU-15 FINAL -->
+</div>
+
+<!-- FB PASO 2 - CU-15 INICIO -->
+<script>
+    (function () {
+        const filtros = new URLSearchParams(window.location.search);
+        function irA(pagina, tam) {
+            filtros.set('pagina', pagina);
+            if (tam) filtros.set('tam', tam);
+            window.location.search = filtros.toString();
+        }
+        document.querySelectorAll('[data-pagina]').forEach(function (enlace) {
+            enlace.addEventListener('click', function (e) {
+                e.preventDefault();
+                irA(enlace.dataset.pagina);
+            });
+        });
+        document.getElementById('tam').addEventListener('change', function () {
+            irA(1, this.value);
+        });
+    })();
+</script>
+<!-- FB PASO 2 - CU-15 FINAL -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta médica</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato { color: var(--muted-text); }
+        .cie-sugerencias { position: absolute; z-index: 20; left: 0; right: 0; max-height: 260px; overflow-y: auto; }
+        .cie-sugerencias .list-group-item { cursor: pointer; }
+        .fila-alerta { background: rgba(255, 193, 7, .15); }
+        textarea { resize: vertical; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/medico}"><i class="fas fa-user-doctor me-2"></i>Consulta médica</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 980px;">
+
+    <!-- FB PASO 10 - CU-08 INICIO -->
+    <!-- FB PASO 8 - CU-12 INICIO -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FB PASO 8 - CU-12 FINAL -->
+    <!-- FB PASO 10 - CU-08 FINAL -->
+    <!-- FA05 - CU-08 INICIO -->
+    <div th:if="${error}" class="alert alert-danger">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+    </div>
+    <!-- FA05 - CU-08 FINAL -->
+
+    <!-- FB PASO 3 - CU-08 INICIO -->
+    <!-- Paso 3: contexto -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h5 class="mb-0">
+                    <span th:text="${cita.nombrePaciente}">Paciente</span>
+                    <span th:if="${cita.prioridad == 'EMERGENCIA'}" class="badge bg-danger ms-1">Emergencia</span>
+                </h5>
+                <div class="small dato">
+                    <span th:text="${cita.numeroCita}">CITA</span> ·
+                    <span th:text="${cita.nombreEspecialidad}">Especialidad</span> ·
+                    <span th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy HH:mm')}">fecha</span>
+                </div>
+            </div>
+            <a th:href="@{/medico}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Panel</a>
+        </div>
+    </div>
+    <!-- FB PASO 3 - CU-08 FINAL -->
+
+    <!-- Signos vitales (CU-07) -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h6 class="mb-2"><i class="fas fa-heart-pulse me-2"></i>Signos vitales del paciente</h6>
+            <div th:if="${#lists.isEmpty(historialSignos)}" class="dato small">Sin registros de signos vitales.</div>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(historialSignos)}">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="small dato">
+                    <tr><th>Fecha</th><th>Presión</th><th>Temp.</th><th>FC</th><th>Peso</th><th>Talla</th><th>Alertas</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s, it : ${historialSignos}" th:classappend="${s.alertas != null} ? 'fila-alerta'">
+                        <td class="small">
+                            <span th:text="${#temporals.format(s.fechaRegistro, 'dd/MM/yyyy HH:mm')}">fecha</span>
+                            <span th:if="${it.first}" class="badge bg-primary ms-1">Hoy / última</span>
+                        </td>
+                        <td th:text="${s.sistolica} + '/' + ${s.diastolica}">120/80</td>
+                        <td th:text="${s.temperatura} + ' °C'">36.5</td>
+                        <td th:text="${s.frecuenciaCardiaca}">75</td>
+                        <td th:text="${s.peso} + ' kg'">70</td>
+                        <td th:text="${s.talla} + ' cm'">170</td>
+                        <td class="small">
+                            <span th:if="${s.alertas != null}" class="text-warning-emphasis">
+                                <i class="fas fa-triangle-exclamation me-1"></i><span th:text="${s.alertas}"></span>
+                            </span>
+                            <span th:if="${s.alertas == null}" class="dato">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- FB PASOS 4-9 - CU-08 INICIO -->
+    <!-- Pasos 4–9 -->
+    <form th:action="@{/medico/citas/{id}/consulta(id=${cita.id})}" th:object="${consulta}" method="post" novalidate id="formConsulta">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="fas fa-file-medical me-2"></i>Registro de la consulta</h6>
+
+                <!-- FB PASO 5 - CU-08 INICIO -->
+                <div class="mb-3">
+                    <label class="form-label">Motivo de visita <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="2" th:field="*{motivo}"
+                              th:classappend="${#fields.hasErrors('motivo')} ? 'is-invalid'"></textarea>
+                    <div class="invalid-feedback" th:errors="*{motivo}"></div>
+                </div>
+                <!-- FB PASO 5 - CU-08 FINAL -->
+
+                <!-- FB PASO 6 - CU-08 INICIO -->
+                <div class="mb-3">
+                    <label class="form-label">Hallazgos clínicos <span class="dato small">(obligatorio para finalizar)</span></label>
+                    <textarea class="form-control" rows="3" th:field="*{hallazgos}"
+                              th:classappend="${#fields.hasErrors('hallazgos')} ? 'is-invalid'"></textarea>
+                    <div class="invalid-feedback" th:errors="*{hallazgos}"></div>
+                </div>
+                <!-- FB PASO 6 - CU-08 FINAL -->
+
+                <!-- FB PASO 7 - CU-08 INICIO -->
+                <!-- Paso 7: CIE-10 con autocompletado -->
+                <div class="mb-3 position-relative">
+                    <label class="form-label">Código CIE-10 <span class="dato small">(opcional)</span></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" style="max-width: 9rem;" th:field="*{codigoCie10}"
+                               id="codigoCie10" placeholder="J06.9" autocomplete="off"
+                               th:classappend="${#fields.hasErrors('codigoCie10')} ? 'is-invalid'">
+                        <input type="text" class="form-control" id="buscarCie10" autocomplete="off"
+                               placeholder="Buscar por código o descripción (ej. resp, J06)…">
+                    </div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('codigoCie10')}" th:errors="*{codigoCie10}"></div>
+                    <div class="form-text" id="descripcionCie10"></div>
+                    <div class="list-group shadow cie-sugerencias d-none" id="sugerencias"></div>
+                </div>
+                <!-- FB PASO 7 - CU-08 FINAL -->
+
+                <!-- FB PASO 8 - CU-08 INICIO -->
+                <div class="mb-3">
+                    <label class="form-label">Diagnóstico <span class="dato small">(obligatorio para finalizar, 10–5000 caracteres)</span></label>
+                    <textarea class="form-control" rows="3" th:field="*{diagnostico}" id="diagnostico"
+                              th:classappend="${#fields.hasErrors('diagnostico')} ? 'is-invalid'"></textarea>
+                    <div class="invalid-feedback" th:errors="*{diagnostico}"></div>
+                    <div class="form-text text-end"><span id="contadorDiag">0</span> caracteres</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Plan de tratamiento <span class="dato small">(obligatorio para finalizar)</span></label>
+                    <textarea class="form-control" rows="3" th:field="*{planTratamiento}"
+                              th:classappend="${#fields.hasErrors('planTratamiento')} ? 'is-invalid'"></textarea>
+                    <div class="invalid-feedback" th:errors="*{planTratamiento}"></div>
+                </div>
+                <!-- FB PASO 8 - CU-08 FINAL -->
+
+                <div class="mb-3">
+                    <label class="form-label">Notas adicionales</label>
+                    <textarea class="form-control" rows="2" th:field="*{notas}"
+                              th:classappend="${#fields.hasErrors('notas')} ? 'is-invalid'"></textarea>
+                    <div class="invalid-feedback" th:errors="*{notas}"></div>
+                </div>
+
+                <!-- FB PASO 9 - CU-08 INICIO -->
+                <label class="form-label d-block">Estado de la consulta</label>
+                <div class="btn-group" role="group">
+                    <th:block th:each="e : ${estados}">
+                        <input type="radio" class="btn-check" th:field="*{estado}" th:value="${e.name()}">
+                        <label class="btn btn-outline-primary" th:for="${#ids.prev('estado')}" th:text="${e.descripcion}">En curso</label>
+                    </th:block>
+                </div>
+                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('estado')}" th:errors="*{estado}"></div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">
+                <i class="fas fa-floppy-disk me-1"></i>Guardar Consulta
+            </button>
+            <a th:href="@{/medico}" class="btn btn-outline-secondary btn-lg">Volver al panel</a>
+        </div>
+                <!-- FB PASO 9 - CU-08 FINAL -->
+    </form>
+    <!-- FB PASOS 4-9 - CU-08 FINAL -->
+
+    <!-- FA02 - CU-08 INICIO -->
+    <!-- FB PASO 1 - CU-12 INICIO -->
+    <!-- CU-12: acciones de la consulta -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h6 class="mb-3"><i class="fas fa-bolt me-2"></i>Acciones de la consulta</h6>
+            <div th:if="${seguimientoAgendado != null}" class="alert alert-success mb-0">
+                <i class="fas fa-calendar-check me-2"></i>Seguimiento agendado:
+                <strong th:text="${seguimientoAgendado.numeroCita}">CITA</strong> ·
+                <span th:text="${seguimientoAgendado.tipoSeguimiento}">Tipo</span> ·
+                <span th:text="${#temporals.format(seguimientoAgendado.fechaHora, 'dd/MM/yyyy HH:mm')}">fecha</span>
+            </div>
+            <th:block th:if="${seguimientoAgendado == null}">
+                <a th:if="${consultaGuardada}" th:href="@{/medico/citas/{id}/seguimiento(id=${cita.id})}"
+                   class="btn btn-outline-success" id="btnSeguimiento">
+                    <i class="fas fa-calendar-plus me-1"></i>Agendar Seguimiento
+                </a>
+                <button th:unless="${consultaGuardada}" type="button" class="btn btn-outline-success" disabled>
+                    <i class="fas fa-calendar-plus me-1"></i>Agendar Seguimiento
+                </button>
+                <div class="form-text" th:unless="${consultaGuardada}">Guarde la consulta al menos una vez para poder agendar un seguimiento.</div>
+            </th:block>
+        </div>
+    </div>
+    <!-- FB PASO 1 - CU-12 FINAL -->
+    <!-- FA02 - CU-08 FINAL -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FB PASOS 7-8 - CU-08 INICIO -->
+<script th:inline="javascript">
+    (function () {
+        const urlCie10 = /*[[@{/medico/cie10}]]*/ '/medico/cie10';
+        const codigo = document.getElementById('codigoCie10');
+        const buscar = document.getElementById('buscarCie10');
+        const lista = document.getElementById('sugerencias');
+        const descripcion = document.getElementById('descripcionCie10');
+        let temporizador = null;
+
+        function ocultar() { lista.classList.add('d-none'); lista.innerHTML = ''; }
+
+        function mostrar(items) {
+            lista.innerHTML = '';
+            if (!items.length) { ocultar(); return; }
+            items.forEach(i => {
+                const a = document.createElement('button');
+                a.type = 'button';
+                a.className = 'list-group-item list-group-item-action';
+                a.innerHTML = '<strong></strong> <span class="small"></span>';
+                a.querySelector('strong').textContent = i.codigo;
+                a.querySelector('span').textContent = i.descripcion;
+                a.addEventListener('click', () => {
+                    codigo.value = i.codigo;
+                    buscar.value = '';
+                    descripcion.textContent = i.codigo + ' — ' + i.descripcion;
+                    ocultar();
+                });
+                lista.appendChild(a);
+            });
+            lista.classList.remove('d-none');
+        }
+
+        // Paso 7: sugerencias en tiempo real (espera 250 ms entre teclas para no saturar al servidor)
+        buscar.addEventListener('input', () => {
+            clearTimeout(temporizador);
+            const q = buscar.value.trim();
+            if (q.length < 2) { ocultar(); return; }
+            temporizador = setTimeout(() => {
+                fetch(urlCie10 + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } })
+                    .then(r => r.ok ? r.json() : [])
+                    .then(mostrar)
+                    .catch(ocultar);
+            }, 250);
+        });
+        document.addEventListener('click', e => { if (!lista.contains(e.target) && e.target !== buscar) ocultar(); });
+
+        // Contador del diagnóstico (RN-CU08-01: 10–5000)
+        const diag = document.getElementById('diagnostico');
+        const contador = document.getElementById('contadorDiag');
+        const contar = () => { contador.textContent = diag.value.trim().length; };
+        diag.addEventListener('input', contar);
+        contar();
+
+        // FB PASO 1 - CU-12 INICIO
+        // CU-12: avisar si se sale a agendar el seguimiento con cambios sin guardar
+        const form = document.getElementById('formConsulta');
+        let cambios = false;
+        form.addEventListener('input', () => { cambios = true; });
+        const btnSeguimiento = document.getElementById('btnSeguimiento');
+        if (btnSeguimiento) {
+            btnSeguimiento.addEventListener('click', e => {
+                if (cambios && !confirm('Hay cambios de la consulta sin guardar y se perderán. ¿Continuar?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+        // FB PASO 1 - CU-12 FINAL
+
+        form.addEventListener('submit', () => {
+            const b = document.getElementById('btnGuardar');
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+        });
+    })();
+</script>
+<!-- FB PASOS 7-8 - CU-08 FINAL -->
+</body>
+</html>

@@ -22,6 +22,7 @@ public class UsuarioMapper {
         dto.setApellidos(usuario.getApellidos());
         dto.setEmail(usuario.getEmail());
         dto.setTelefono(usuario.getTelefono());
+        dto.setNumeroSeguro(usuario.getNumeroSeguro());   // faltaba: se perdia el dato
         dto.setEsActivo(usuario.getActivo());
         dto.setUsername(usuario.getUsername());
         dto.setRol(usuario.getRol());
@@ -43,6 +44,7 @@ public class UsuarioMapper {
         usuario.setApellidos(dto.getApellidos());
         usuario.setEmail(dto.getEmail());
         usuario.setTelefono(dto.getTelefono());
+        usuario.setNumeroSeguro(dto.getNumeroSeguro());   // faltaba: se perdia el dato
         usuario.setUsername(dto.getUsername());
         usuario.setPassword(dto.getPassword());
         usuario.setActivo(dto.getEsActivo());

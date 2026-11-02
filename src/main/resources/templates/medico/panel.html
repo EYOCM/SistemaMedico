@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel médico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato { color: var(--muted-text); }
+        .col-titulo { font-size: .8rem; letter-spacing: .04em; }
+        .tarjeta { border-left: 6px solid #2E5C9A; }
+        .tarjeta.emergencia { border-left-color: #dc3545; }
+        .tarjeta.consulta { border-left-color: #6f42c1; }
+        .tarjeta.evaluado { border-left-color: #198754; }
+        .turno { font-size: 1.4rem; font-weight: 700; min-width: 2.4rem; text-align: center; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid px-4">
+        <span class="navbar-brand"><i class="fas fa-user-doctor me-2"></i>Consulta médica</span>
+        <div class="d-flex gap-2">
+            <!-- FB PASO 1 - CU-16 INICIO -->
+            <a th:href="@{/medico/agenda}" class="btn btn-outline-light btn-sm"><i class="fas fa-calendar-days me-1"></i>Agenda Médica</a>
+            <!-- FB PASO 1 - CU-16 FINAL -->
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 mb-5">
+
+    <!-- FB PASO 2 - CU-08 INICIO -->
+    <div th:if="${anuncio}" class="alert alert-primary d-flex align-items-center justify-content-between gap-3">
+        <div><i class="fas fa-bullhorn me-2"></i><span id="textoAnuncio" th:text="${anuncio}">Turno…</span></div>
+        <button type="button" class="btn btn-sm btn-primary" id="btnRepetir">
+            <i class="fas fa-volume-high me-1"></i>Repetir anuncio
+        </button>
+    </div>
+    <!-- FB PASO 2 - CU-08 FINAL -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <th:block th:if="${panel != null}">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <div>
+                <h4 class="mb-0" th:text="${panel.nombreMedico}">Dr(a). Carlos Méndez</h4>
+                <div class="dato" th:text="'Citas de hoy · ' + ${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">Citas de hoy</div>
+            </div>
+            <small class="dato"><i class="fas fa-rotate me-1"></i>Se actualiza cada 30 s</small>
+        </div>
+
+        <div class="row g-4">
+            <!-- FB PASO 1 - CU-08 INICIO -->
+            <!-- En espera de consulta -->
+            <div class="col-xl-4 col-lg-6">
+                <h6 class="text-uppercase fw-bold dato col-titulo mb-2">
+                    <i class="fas fa-hourglass-half me-1"></i>En espera de consulta
+                    (<span th:text="${#lists.size(panel.enEspera)}">0</span>)
+                </h6>
+                <div th:if="${#lists.isEmpty(panel.enEspera)}" class="card card-body text-center dato">Sin pacientes en espera.</div>
+
+                <div th:each="c, it : ${panel.enEspera}" class="card shadow-sm mb-2 tarjeta"
+                     th:classappend="${c.prioridad == 'EMERGENCIA'} ? 'emergencia'">
+                    <div class="card-body">
+                        <div class="d-flex gap-3 align-items-start">
+                            <div class="turno" th:text="${it.count}">1</div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">
+                                    <span th:text="${c.nombrePaciente}">Paciente</span>
+                                    <span th:if="${c.prioridad == 'EMERGENCIA'}" class="badge bg-danger ms-1">Emergencia</span>
+                                </div>
+                                <div class="small dato">
+                                    <span th:text="${c.numeroCita}">CITA</span> · <span th:text="${c.nombreEspecialidad}">Esp.</span> ·
+                                    <span th:text="${#temporals.format(c.fechaHora, 'HH:mm')}">09:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <!-- FB PASO 2 - CU-08 INICIO -->
+                            <form method="post" th:action="@{/medico/citas/{id}/iniciar(id=${c.id})}" class="m-0 form-accion">
+                                <input type="hidden" name="turno" th:value="${it.count}">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-bullhorn me-1"></i>Iniciar Consulta
+                                </button>
+                            </form>
+                            <!-- FB PASO 2 - CU-08 FINAL -->
+                            <!-- FA06 - CU-08 INICIO -->
+                            <form method="post" th:action="@{/medico/citas/{id}/no-asistio(id=${c.id})}" class="m-0 form-accion form-confirmar"
+                                  th:attr="data-confirmar='¿Marcar a ' + ${c.nombrePaciente} + ' como No Asistió?'">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-user-xmark me-1"></i>No Asistió
+                                </button>
+                            </form>
+                            <!-- FA06 - CU-08 FINAL -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- FB PASO 1 - CU-08 FINAL -->
+
+            <!-- FB PASO 3 - CU-08 INICIO -->
+            <!-- En consulta médica -->
+            <div class="col-xl-4 col-lg-6">
+                <h6 class="text-uppercase fw-bold dato col-titulo mb-2">
+                    <i class="fas fa-stethoscope me-1"></i>En consulta médica
+                    (<span th:text="${#lists.size(panel.enConsulta)}">0</span>)
+                </h6>
+                <div th:if="${#lists.isEmpty(panel.enConsulta)}" class="card card-body text-center dato">Nadie en consulta.</div>
+
+                <div th:each="c : ${panel.enConsulta}" class="card shadow-sm mb-2 tarjeta consulta">
+                    <div class="card-body">
+                        <div class="fw-semibold">
+                            <span th:text="${c.nombrePaciente}">Paciente</span>
+                            <span th:if="${c.prioridad == 'EMERGENCIA'}" class="badge bg-danger ms-1">Emergencia</span>
+                        </div>
+                        <div class="small dato mb-2" th:text="${c.numeroCita} + ' · ' + ${c.nombreEspecialidad}">CITA · Esp.</div>
+                        <a th:href="@{/medico/citas/{id}/consulta(id=${c.id})}" class="btn btn-success btn-sm">
+                            <i class="fas fa-file-medical me-1"></i>Ver / Completar Consulta
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- FB PASO 3 - CU-08 FINAL -->
+
+            <!-- FB PASO 11 - CU-08 INICIO -->
+            <!-- Evaluados -->
+            <div class="col-xl-4 col-lg-12">
+                <h6 class="text-uppercase fw-bold dato col-titulo mb-2">
+                    <i class="fas fa-clipboard-check me-1"></i>Evaluados — pendiente de cierre
+                    (<span th:text="${#lists.size(panel.evaluados)}">0</span>)
+                </h6>
+                <div th:if="${#lists.isEmpty(panel.evaluados)}" class="card card-body text-center dato">Sin consultas evaluadas.</div>
+
+                <div th:each="c : ${panel.evaluados}" class="card shadow-sm mb-2 tarjeta evaluado">
+                    <div class="card-body">
+                        <div class="fw-semibold" th:text="${c.nombrePaciente}">Paciente</div>
+                        <div class="small dato mb-2" th:text="${c.numeroCita} + ' · ' + ${c.nombreEspecialidad}">CITA · Esp.</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <!-- FA04 - CU-08 INICIO -->
+                            <a th:href="@{/medico/citas/{id}/receta(id=${c.id})}"
+                               th:classappend="${panel.citasConReceta.contains(c.id)} ? 'btn-outline-success' : 'btn-outline-primary'"
+                               class="btn btn-sm">
+                                <i class="fas fa-prescription-bottle-medical me-1"></i>
+                                <span th:text="${panel.citasConReceta.contains(c.id)} ? 'Ver receta' : 'Receta'">Receta</span>
+                                <i th:if="${panel.citasConReceta.contains(c.id)}" class="fas fa-check ms-1"></i>
+                            </a>
+                            <!-- FA04 - CU-08 FINAL -->
+                            <!-- FA01 - CU-08 INICIO -->
+                            <a th:href="@{/medico/citas/{id}/orden(id=${c.id})}"
+                               th:classappend="${panel.citasConOrden.contains(c.id)} ? 'btn-outline-success' : 'btn-outline-primary'"
+                               class="btn btn-sm">
+                                <i class="fas fa-vial me-1"></i>
+                                <span th:text="${panel.citasConOrden.contains(c.id)} ? 'Ver orden' : 'Orden de laboratorio'">Orden de laboratorio</span>
+                                <i th:if="${panel.citasConOrden.contains(c.id)}" class="fas fa-check ms-1"></i>
+                            </a>
+                            <!-- FA01 - CU-08 FINAL -->
+                            <!-- FA02 - CU-08 INICIO -->
+                            <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Se implementa en el CU-12">
+                                <i class="fas fa-calendar-plus me-1"></i>Seguimiento
+                            </button>
+                            <!-- FA02 - CU-08 FINAL -->
+                            <!-- FB PASO 12 - CU-08 INICIO -->
+                            <form method="post" th:action="@{/medico/citas/{id}/finalizar(id=${c.id})}" class="m-0 form-accion form-confirmar"
+                                  th:attr="data-confirmar='¿Finalizar la atención de ' + ${c.nombrePaciente} + '?'">
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-flag-checkered me-1"></i>Finalizar Atención
+                                </button>
+                            </form>
+                            <!-- FB PASO 12 - CU-08 FINAL -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- FB PASO 11 - CU-08 FINAL -->
+        </div>
+    </th:block>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FB PASOS 1-2 - CU-08 INICIO -->
+<script>
+    (function () {
+        const texto = document.getElementById('textoAnuncio');
+        function anunciar() {
+            if (!texto || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const voz = new SpeechSynthesisUtterance(texto.textContent);
+            voz.lang = 'es-MX';
+            voz.rate = 0.95;
+            window.speechSynthesis.speak(voz);
+        }
+        anunciar();
+        const repetir = document.getElementById('btnRepetir');
+        if (repetir) repetir.addEventListener('click', anunciar);
+
+        // Confirmación para acciones que cierran la cita (No asistió / Finalizar)
+        document.querySelectorAll('.form-confirmar').forEach(f => f.addEventListener('submit', e => {
+            if (!window.confirm(f.dataset.confirmar)) e.preventDefault();
+        }));
+        // Evitar doble clic
+        document.querySelectorAll('.form-accion').forEach(f => f.addEventListener('submit', e => {
+            if (e.defaultPrevented) return;
+            const b = f.querySelector('button');
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+        }));
+
+        // Actualización automática cada 30 s (paso 1)
+        setTimeout(() => { window.location.href = window.location.pathname; }, 30000);
+    })();
+</script>
+<!-- FB PASOS 1-2 - CU-08 FINAL -->
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Especialidades por Sede</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="d-flex">
+
+    <div th:replace="~{fragments/menu :: menu-admin}"></div>
+
+    <main class="flex-grow-1 p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Especialidades por Sede</h2>
+            <!-- FB PASO 4 - CU-13 INICIO -->
+            <a th:href="@{/admin/sedes-especialidades/nueva}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Asignar Especialidad
+            </a>
+            <!-- FB PASO 4 - CU-13 FINAL -->
+        </div>
+
+        <!-- FB PASO 9 / FA02 - CU-13 INICIO -->
+        <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <!-- FB PASO 9 / FA02 - CU-13 FINAL -->
+        <!-- FA02 - CU-13 INICIO -->
+        <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <!-- FA02 - CU-13 FINAL -->
+
+        <!-- FB PASO 3 - CU-13 INICIO -->
+        <!-- Paso 3: filtro por ID -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" th:action="@{/admin/sedes-especialidades}" class="row g-2 align-items-end">
+                    <input type="hidden" name="tam" th:value="${tam}">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted" for="filtroId">Filtrar por ID</label>
+                        <input type="text" id="filtroId" name="id" class="form-control" th:value="${id}" placeholder="Ej.: 4">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Buscar</button>
+                    </div>
+                    <div class="col-md-2">
+                        <a th:href="@{/admin/sedes-especialidades}" class="btn btn-outline-secondary w-100">Limpiar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- FB PASO 3 - CU-13 FINAL -->
+
+        <!-- FB PASO 3 - CU-13 INICIO -->
+        <!-- Paso 3: tabla -->
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle bg-white">
+                <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Sede</th>
+                    <th>Especialidad</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="a : ${asignaciones.content}">
+                    <td th:text="${a.id}">1</td>
+                    <td th:text="${a.nombreSucursal}">Sede Central</td>
+                    <td th:text="${a.nombreEspecialidad}">Cardiología</td>
+                    <td>
+                        <span th:if="${a.activo}" class="badge bg-success">Activo</span>
+                        <span th:unless="${a.activo}" class="badge bg-danger">Inactivo</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="dropdown" th:if="${a.activo}">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                &#8942;
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <!-- FA02 - CU-13 INICIO -->
+                                    <!-- FA02 -->
+                                    <button type="button" class="dropdown-item text-danger"
+                                            data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                                            th:attr="data-id=${a.id}, data-nombre=${a.nombreSucursal + ' · ' + a.nombreEspecialidad}">
+                                        <i class="fas fa-trash me-2"></i>Eliminar
+                                    </button>
+                                    <!-- FA02 - CU-13 FINAL -->
+                                </li>
+                            </ul>
+                        </div>
+                        <span th:unless="${a.activo}" class="small text-muted">—</span>
+                    </td>
+                </tr>
+
+                <!-- FA01 - CU-13 INICIO -->
+                <!-- FA01 -->
+                <tr th:if="${asignaciones.content.isEmpty()}">
+                    <td colspan="5" class="text-center text-muted py-4">
+                        No hay registros de especialidades asignadas a sedes.
+                    </td>
+                </tr>
+                <!-- FA01 - CU-13 FINAL -->
+                </tbody>
+            </table>
+        </div>
+        <!-- FB PASO 3 - CU-13 FINAL -->
+
+        <!-- FB PASO 3 - CU-13 INICIO -->
+        <!-- Paso 3: paginación -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <form method="GET" th:action="@{/admin/sedes-especialidades}" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="id" th:value="${id}">
+                <label class="small text-muted mb-0" for="tam">Elementos por página</label>
+                <select id="tam" name="tam" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    <option value="10" th:selected="${tam == 10}">10</option>
+                    <option value="25" th:selected="${tam == 25}">25</option>
+                    <option value="50" th:selected="${tam == 50}">50</option>
+                </select>
+            </form>
+
+            <span class="small text-muted">
+                <span th:text="${asignaciones.totalElements}">0</span> registro(s) &mdash;
+                página <span th:text="${asignaciones.number + 1}">1</span> de
+                <span th:text="${asignaciones.totalPages > 0 ? asignaciones.totalPages : 1}">1</span>
+            </span>
+
+            <nav th:if="${asignaciones.totalPages > 1}">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${asignaciones.first} ? 'disabled'">
+                        <a class="page-link" th:href="@{/admin/sedes-especialidades(id=${id},tam=${tam},pagina=${asignaciones.number})}">Anterior</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, asignaciones.totalPages)}"
+                        th:classappend="${i == asignaciones.number + 1} ? 'active'">
+                        <a class="page-link" th:href="@{/admin/sedes-especialidades(id=${id},tam=${tam},pagina=${i})}" th:text="${i}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${asignaciones.last} ? 'disabled'">
+                        <a class="page-link" th:href="@{/admin/sedes-especialidades(id=${id},tam=${tam},pagina=${asignaciones.number + 2})}">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <!-- FB PASO 3 - CU-13 FINAL -->
+    </main>
+</div>
+
+<!-- FA02 - CU-13 INICIO -->
+<!-- FA02: confirmación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-triangle-exclamation text-warning me-2"></i>¿Confirmar eliminación?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Se eliminará la asignación "<strong id="nombreEliminar"></strong>".</p>
+                <p class="text-muted small mt-2 mb-0">
+                    Los pacientes dejarán de ver esta especialidad en esa sede al agendar una cita.
+                    Las citas que ya están agendadas no cambian.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="POST">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- FA02 - CU-13 FINAL -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FA02 - CU-13 INICIO -->
+<script>
+    document.getElementById('modalEliminar').addEventListener('show.bs.modal', function (evento) {
+        const boton = evento.relatedTarget;
+        document.getElementById('nombreEliminar').textContent = boton.dataset.nombre;
+        document.getElementById('formEliminar').action = '/admin/sedes-especialidades/' + boton.dataset.id + '/eliminar';
+    });
+</script>
+<!-- FA02 - CU-13 FINAL -->
+</body>
+</html>

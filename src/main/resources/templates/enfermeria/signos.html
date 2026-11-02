@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signos vitales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato { color: var(--muted-text); }
+        .unidad { min-width: 4.5rem; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/enfermeria}"><i class="fas fa-user-nurse me-2"></i>Enfermería</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 760px;">
+
+    <!-- FB PASO 3 - CU-07 INICIO -->
+    <!-- Paso 3: contexto de la cita -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="mb-0">
+                <span th:text="${cita.nombrePaciente}">Sofía Morales Lima</span>
+                <span th:if="${cita.prioridad == 'EMERGENCIA'}" class="badge bg-danger ms-1">EMERGENCIA</span>
+            </h5>
+            <div class="small dato">
+                <span th:text="${cita.numeroCita}">CITA-ENF-04</span> ·
+                <span th:text="${cita.nombreEspecialidad}">Medicina General</span> ·
+                <span th:text="${cita.nombreMedico}">Dr. Carlos Méndez</span>
+            </div>
+        </div>
+    </div>
+    <!-- FB PASO 3 - CU-07 FINAL -->
+
+    <!-- FB PASOS 4-9 - CU-07 INICIO -->
+    <!-- Pasos 4–9 -->
+    <form th:action="@{/enfermeria/citas/{id}/signos(id=${cita.id})}" th:object="${signos}"
+          method="post" novalidate id="formSignos">
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="fas fa-heart-pulse me-2"></i>Signos vitales</h6>
+
+                <!-- FB PASO 4 - CU-07 INICIO -->
+                <!-- Presión (RN-CU07-01) -->
+                <label class="form-label">Presión arterial</label>
+                <div class="row g-2 mb-1">
+                    <div class="col-6">
+                        <div class="input-group">
+                            <input type="number" step="1" class="form-control" placeholder="Sistólica"
+                                   th:field="*{sistolica}" th:classappend="${#fields.hasErrors('sistolica')} ? 'is-invalid'">
+                            <span class="input-group-text unidad">mmHg</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="input-group">
+                            <input type="number" step="1" class="form-control" placeholder="Diastólica"
+                                   th:field="*{diastolica}" th:classappend="${#fields.hasErrors('diastolica')} ? 'is-invalid'">
+                            <span class="input-group-text unidad">mmHg</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-text mb-1">Sistólica 60–250 · Diastólica 40–150</div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('sistolica')}" th:errors="*{sistolica}"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('diastolica') and !#fields.hasErrors('sistolica')}" th:errors="*{diastolica}"></div>
+                <!-- FB PASO 4 - CU-07 FINAL -->
+
+                <div class="row g-3 mt-1">
+                    <!-- FB PASO 5 - CU-07 INICIO -->
+                    <!-- Temperatura (RN-CU07-02) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Temperatura</label>
+                        <div class="input-group has-validation">
+                            <input type="number" step="0.1" class="form-control" placeholder="36.5"
+                                   th:field="*{temperatura}" th:classappend="${#fields.hasErrors('temperatura')} ? 'is-invalid'">
+                            <span class="input-group-text unidad">°C</span>
+                            <div class="invalid-feedback" th:errors="*{temperatura}"></div>
+                        </div>
+                        <div class="form-text">34.0–42.0, un decimal</div>
+                    </div>
+                    <!-- FB PASO 5 - CU-07 FINAL -->
+
+                    <!-- FB PASO 8 - CU-07 INICIO -->
+                    <!-- Frecuencia cardíaca (RN-CU07-05) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Frecuencia cardíaca</label>
+                        <div class="input-group has-validation">
+                            <input type="number" step="1" class="form-control" placeholder="75"
+                                   th:field="*{frecuenciaCardiaca}" th:classappend="${#fields.hasErrors('frecuenciaCardiaca')} ? 'is-invalid'">
+                            <span class="input-group-text unidad">lpm</span>
+                            <div class="invalid-feedback" th:errors="*{frecuenciaCardiaca}"></div>
+                        </div>
+                        <div class="form-text">30–220, entero</div>
+                    </div>
+                    <!-- FB PASO 8 - CU-07 FINAL -->
+
+                    <!-- FB PASO 6 - CU-07 INICIO -->
+                    <!-- Peso (RN-CU07-03) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Peso</label>
+                        <div class="input-group has-validation">
+                            <input type="number" step="0.01" class="form-control" placeholder="70.00"
+                                   th:field="*{peso}" th:classappend="${#fields.hasErrors('peso')} ? 'is-invalid'">
+                            <span class="input-group-text unidad">kg</span>
+                            <div class="invalid-feedback" th:errors="*{peso}"></div>
+                        </div>
+                        <div class="form-text">0.5–300, dos decimales</div>
+                    </div>
+                    <!-- FB PASO 6 - CU-07 FINAL -->
+
+                    <!-- FB PASO 7 - CU-07 INICIO -->
+                    <!-- Talla (RN-CU07-04) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Talla</label>
+                        <div class="input-group has-validation">
+                            <input type="number" step="0.01" class="form-control" placeholder="170.00"
+                                   th:field="*{talla}" th:classappend="${#fields.hasErrors('talla')} ? 'is-invalid'">
+                            <span class="input-group-text unidad">cm</span>
+                            <div class="invalid-feedback" th:errors="*{talla}"></div>
+                        </div>
+                        <div class="form-text">30–250, dos decimales</div>
+                    </div>
+                    <!-- FB PASO 7 - CU-07 FINAL -->
+                </div>
+            </div>
+        </div>
+
+        <!-- FA03 - CU-07 INICIO -->
+        <!-- Paso 9 / FA03: alertas clínicas en tiempo real (VitalSignAlertsDisplay) -->
+        <div id="alertas" class="mb-3"></div>
+        <!-- FA03 - CU-07 FINAL -->
+
+        <!-- FA01 - CU-07 INICIO -->
+        <!-- FA01 -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" th:field="*{emergencia}">
+                    <label class="form-check-label fw-semibold" th:for="${#ids.prev('emergencia')}">
+                        ¿Es emergencia? <span class="dato fw-normal">— el paciente pasa directamente a consulta médica</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <!-- FA01 - CU-07 FINAL -->
+
+        <!-- FB PASO 9 - CU-07 INICIO -->
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success btn-lg" id="btnRegistrar">
+                <i class="fas fa-check me-1"></i>Registrar Signos Vitales
+            </button>
+            <a th:href="@{/enfermeria}" class="btn btn-outline-secondary btn-lg">Volver al panel</a>
+        </div>
+        <!-- FB PASO 9 - CU-07 FINAL -->
+    </form>
+    <!-- FB PASOS 4-9 - CU-07 FINAL -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FA03 - CU-07 INICIO -->
+<script>
+    (function () {
+        // FA03 · RN-CU07-06: solo avisa, NO impide guardar.
+        // La alerta que queda en el expediente la calcula el servidor.
+        const campo = id => document.getElementById(id);
+        const num = id => { const v = parseFloat(campo(id).value); return isNaN(v) ? null : v; };
+        const caja = campo('alertas');
+
+        function revisar() {
+            const alertas = [];
+            const sis = num('sistolica'), dia = num('diastolica');
+            if (sis !== null && dia !== null && (sis < 90 || sis > 140 || dia < 60 || dia > 90)) {
+                alertas.push(['Presión arterial fuera de rango normal.', 'Actual ' + sis + '/' + dia + ' · normal 90/60 – 140/90']);
+            }
+            const t = num('temperatura');
+            if (t !== null && (t < 36.0 || t > 37.5)) {
+                alertas.push(['Temperatura fuera de rango normal.', 'Actual ' + t + ' °C · normal 36.0 – 37.5']);
+            }
+            const fc = num('frecuenciaCardiaca');
+            if (fc !== null && (fc < 60 || fc > 100)) {
+                alertas.push(['Frecuencia cardíaca fuera de rango normal.', 'Actual ' + fc + ' lpm · normal 60 – 100']);
+            }
+            caja.innerHTML = alertas.map(a =>
+                '<div class="alert alert-warning py-2 mb-2"><i class="fas fa-triangle-exclamation me-2"></i>' +
+                '<strong>' + a[0] + '</strong> <span class="small">' + a[1] + '</span></div>').join('');
+        }
+
+        ['sistolica', 'diastolica', 'temperatura', 'frecuenciaCardiaca']
+            .forEach(id => campo(id).addEventListener('input', revisar));
+        revisar();  // por si la página volvió con errores y valores escritos
+
+        campo('formSignos').addEventListener('submit', () => {
+            const b = campo('btnRegistrar');
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
+        });
+    })();
+</script>
+<!-- FA03 - CU-07 FINAL -->
+</body>
+</html>

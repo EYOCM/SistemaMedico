@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Portal - Paciente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -143,11 +144,13 @@
                     <i class="fas fa-home"></i>Inicio
                 </a>
             </li>
+            <!-- FB PASO 10 - CU-00 INICIO -->
             <li>
                 <a href="/citas/paso/1">
                     <i class="fas fa-calendar-plus"></i>Agendar Cita
                 </a>
             </li>
+            <!-- FB PASO 10 - CU-00 FINAL -->
             <li>
                 <a href="/paciente/mis-citas">
                     <i class="fas fa-list-alt"></i>Mis Citas
@@ -189,8 +192,19 @@
             </div>
         </div>
 
+        <!-- Mensajes flash (p. ej. "Esta cita ya fue pagada." desde PagoController) -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+
         <!-- Opciones Principales -->
         <div class="row g-4 mb-4">
+            <!-- FB PASO 10 - CU-00 INICIO -->
             <div class="col-md-4">
                 <div class="card card-opcion h-100">
                     <div class="card-body">
@@ -205,6 +219,7 @@
                     </div>
                 </div>
             </div>
+            <!-- FB PASO 10 - CU-00 FINAL -->
 
             <div class="col-md-4">
                 <div class="card card-opcion h-100">

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogos del Sistema</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="d-flex">
+
+    <div th:replace="~{fragments/menu :: menu-admin}"></div>
+
+    <main class="flex-grow-1 p-4">
+        <h2 class="mb-4">Catálogos del Sistema</h2>
+
+        <!-- FB PASO 1 - CU-14 INICIO -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4" th:each="c : ${ {
+                    {'Especialidades', '/admin/especialidades', 'fa-stethoscope', 'Nombre, descripción y precio de la consulta'},
+                    {'Sucursales', '/admin/sucursales', 'fa-building', 'Sedes del hospital'},
+                    {'Laboratorios', '/admin/laboratorios', 'fa-flask', 'Laboratorios que procesan los exámenes'},
+                    {'Exámenes de Laboratorio', '/admin/examenes', 'fa-vials', 'Precio, rango de referencia y laboratorio'},
+                    {'Medicamentos', '/admin/medicamentos', 'fa-pills', 'Precio, unidad, controlado y stock mínimo'},
+                    {'Especialidades por Sede', '/admin/sedes-especialidades', 'fa-link', 'Qué se ofrece en cada sede (CU-13)'},
+                    {'Inventario', '/inventario', 'fa-boxes-stacked', 'Existencias y movimientos por sede (CU-15)'}
+                } }">
+                <a th:href="@{${c[1]}}" class="card h-100 text-decoration-none shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-1"><i class="fas me-2 text-primary" th:classappend="${c[2]}"></i><span th:text="${c[0]}">Catálogo</span></h5>
+                        <p class="small text-muted mb-0" th:text="${c[3]}">Descripción</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <!-- FB PASO 1 - CU-14 FINAL -->
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <h5>Estados de Cita</h5>
+                <table class="table table-sm table-striped bg-white">
+                    <thead class="table-dark"><tr><th>Nombre</th><th>Descripción</th></tr></thead>
+                    <tbody>
+                    <tr th:each="e : ${estadosCita}">
+                        <td><code th:text="${e.name()}">PAGADA</code></td>
+                        <td th:text="${e.descripcion}">Pagada</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-lg-6">
+                <h5>Roles</h5>
+                <table class="table table-sm table-striped bg-white">
+                    <thead class="table-dark"><tr><th>Nombre</th><th>Descripción</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${roles}">
+                        <td><code th:text="${r.name()}">MEDICO</code></td>
+                        <td th:text="${r.descripcion}">Médico</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

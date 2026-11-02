@@ -1,70 +1,141 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Paciente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body class="bg-light">
-<div class="container mt-4 mb-5">
+<body>
+<div class="container my-5" style="max-width: 900px;">
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Registro de Usuario Externo</h4>
+            <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registro de Usuario Externo</h4>
         </div>
         <div class="card-body">
+
+            <!-- FA03 - CU-00 INICIO -->
+            <!-- Mensaje que llega desde la verificación de DPI del portal (CU-00 FA03) -->
+            <div th:if="${infoMsg}" class="alert alert-info" th:text="${infoMsg}"></div>
+            <!-- FA03 - CU-00 FINAL -->
             <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
 
-            <form th:action="@{/procesar-registro}" th:object="${usuario}" method="POST">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nombre Completo *</label>
-                        <input type="text" th:field="*{nombre}" class="form-control" required maxlength="150">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Apellidos *</label>
-                        <input type="text" th:field="*{apellidos}" class="form-control" required maxlength="150">
-                    </div>
+            <!-- FB PASO 1 - CU-02 INICIO -->
+            <form th:action="@{/procesar-registro}" th:object="${usuario}" method="POST" novalidate>
+
+                <!-- FA04 - CU-02 INICIO -->
+                <!-- FA04: errores que no pertenecen a un campo concreto.
+                     #fields solo funciona dentro de un elemento con th:object. -->
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <p class="mb-0" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
                 </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">DPI (13 dígitos) *</label>
-                        <input type="text" th:field="*{dpi}" class="form-control" pattern="\d{13}" maxlength="13" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">NIT (8-9 caracteres)</label>
-                        <input type="text" th:field="*{nit}" class="form-control" maxlength="9">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Teléfono *</label>
-                        <input type="text" th:field="*{telefono}" class="form-control" pattern="\d{8,20}" required>
-                    </div>
+
+                <div th:if="${#fields.hasAnyErrors()}" class="alert alert-warning">
+                    <i class="fas fa-triangle-exclamation me-2"></i>
+                    Revise los campos marcados en rojo y corrija los datos señalados.
                 </div>
+                <!-- FA04 - CU-02 FINAL -->
+
+
+                <!-- FB PASOS 2-9 - CU-02 INICIO -->
+                <h6 class="text-uppercase text-muted small mb-3">Datos personales</h6>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Número de Seguro (Opcional)</label>
-                        <input type="text" th:field="*{numeroSeguro}" class="form-control" maxlength="50">
+                        <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{nombre}" class="form-control"
+                               th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{nombre}"></div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Correo Electrónico *</label>
-                        <input type="email" th:field="*{email}" class="form-control" required maxlength="100">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nombre de Usuario (8-15 chars) *</label>
-                        <input type="text" th:field="*{username}" class="form-control" required minlength="8" maxlength="15">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Contraseña (mín. 8 chars) *</label>
-                        <input type="password" th:field="*{password}" class="form-control" required minlength="8">
+                        <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{apellidos}" class="form-control"
+                               th:classappend="${#fields.hasErrors('apellidos')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{apellidos}"></div>
+                        <div class="form-text">Nombre y apellidos juntos: entre 10 y 100 caracteres.</div>
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">DPI <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{dpi}" class="form-control" maxlength="13"
+                               th:classappend="${#fields.hasErrors('dpi')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{dpi}"></div>
+                        <div class="form-text">13 dígitos numéricos.</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">NIT <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{nit}" class="form-control" maxlength="9"
+                               th:classappend="${#fields.hasErrors('nit')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{nit}"></div>
+                        <div class="form-text">8 o 9 caracteres alfanuméricos.</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Teléfono <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{telefono}" class="form-control" maxlength="8"
+                               th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{telefono}"></div>
+                        <div class="form-text">8 dígitos.</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Seguro</label>
+                        <input type="text" th:field="*{numeroSeguro}" class="form-control" maxlength="50"
+                               th:classappend="${#fields.hasErrors('numeroSeguro')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{numeroSeguro}"></div>
+                        <div class="form-text">Opcional. Entre 5 y 50 caracteres.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{email}" class="form-control" maxlength="100"
+                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{email}"></div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h6 class="text-uppercase text-muted small mb-3">Credenciales de acceso</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre de Usuario <span class="text-danger">*</span></label>
+                        <input type="text" th:field="*{username}" class="form-control" maxlength="9"
+                               th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{username}"></div>
+                        <div class="form-text">Entre 8 y 9 caracteres alfanuméricos.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                        <input type="password" th:field="*{password}" class="form-control"
+                               autocomplete="new-password"
+                               th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{password}"></div>
+                        <div class="form-text">Mínimo 12 caracteres.</div>
+                    </div>
+                </div>
+                <!-- FB PASOS 2-9 - CU-02 FINAL -->
+
                 <div class="d-flex justify-content-between mt-4">
-                    <a href="/" class="btn btn-secondary">Volver al Portal</a>
-                    <button type="submit" class="btn btn-success">Registrarse</button>
+                    <!-- FA01 - CU-02 INICIO -->
+                    <!-- FA01: volver al portal descartando los datos -->
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Volver al Portal
+                    </a>
+                    <!-- FA01 - CU-02 FINAL -->
+                    <!-- FB PASO 10 - CU-02 INICIO -->
+                    <button type="submit" class="btn btn-primary">Registrarse</button>
+                    <!-- FB PASO 10 - CU-02 FINAL -->
                 </div>
             </form>
+            <!-- FB PASO 1 - CU-02 FINAL -->
+
+            <hr class="my-4">
+            <p class="text-center mb-0 small">
+                ¿Ya tiene cuenta? <a href="/login">Inicie sesión</a>
+            </p>
         </div>
     </div>
 </div>

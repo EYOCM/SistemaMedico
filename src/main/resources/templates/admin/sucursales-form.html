@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sucursal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="d-flex">
+
+    <div th:replace="~{fragments/menu :: menu-admin}"></div>
+
+    <main class="flex-grow-1 p-4">
+        <!-- FB PASO 4 / FA02 - CU-14 INICIO -->
+        <h2 class="mb-4"><span th:text="${registro.id} == null ? 'Crear' : 'Editar'">Crear</span> Sucursal</h2>
+        <!-- FB PASO 4 / FA02 - CU-14 FINAL -->
+
+        <div class="card" style="max-width: 720px;">
+            <div class="card-body">
+                <!-- FB PASOS 4-6 / FA02 - CU-14 INICIO -->
+                <form th:action="@{/admin/sucursales/guardar}" th:object="${registro}" method="post" novalidate>
+                    <input type="hidden" th:field="*{id}">
+                    <!-- FB PASO 5 - CU-14 INICIO -->
+                    <div class="mb-3">
+                        <label class="form-label" for="nombre">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" th:field="*{nombre}" th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid'" maxlength="100">
+                        <th:block th:replace="~{fragments/catalogo :: error('nombre')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="telefono">Teléfono</label>
+                        <input type="text" class="form-control" th:field="*{telefono}" th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid'" maxlength="8" inputmode="numeric">
+                        <th:block th:replace="~{fragments/catalogo :: error('telefono')}"></th:block>
+                        <div class="form-text">8 dígitos, sin guiones.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="direccion">Dirección</label>
+                        <textarea class="form-control" rows="3" th:field="*{direccion}" th:classappend="${#fields.hasErrors('direccion')} ? 'is-invalid'" maxlength="500"></textarea>
+                        <th:block th:replace="~{fragments/catalogo :: error('direccion')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="descripcion">Descripción</label>
+                        <textarea class="form-control" rows="3" th:field="*{descripcion}" th:classappend="${#fields.hasErrors('descripcion')} ? 'is-invalid'" maxlength="250"></textarea>
+                        <th:block th:replace="~{fragments/catalogo :: error('descripcion')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="email">Correo electrónico</label>
+                        <input type="email" class="form-control" th:field="*{email}" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'" maxlength="100">
+                        <th:block th:replace="~{fragments/catalogo :: error('email')}"></th:block>
+                    </div>
+                    <!-- FB PASO 5 - CU-14 FINAL -->
+                    <div th:replace="~{fragments/catalogo :: campoEstado}"></div>
+                    <!-- FB PASO 6 / FA04 / FA05 - CU-14 INICIO -->
+                    <th:block th:replace="~{fragments/catalogo :: botonesForm('/admin/sucursales')}"></th:block>
+                    <!-- FB PASO 6 / FA04 / FA05 - CU-14 FINAL -->
+                </form>
+                <!-- FB PASOS 4-6 / FA02 - CU-14 FINAL -->
+            </div>
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

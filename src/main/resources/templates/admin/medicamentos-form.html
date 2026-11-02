@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="d-flex">
+
+    <div th:replace="~{fragments/menu :: menu-admin}"></div>
+
+    <main class="flex-grow-1 p-4">
+        <!-- FB PASO 4 / FA02 - CU-14 INICIO -->
+        <h2 class="mb-4"><span th:text="${registro.id} == null ? 'Crear' : 'Editar'">Crear</span> Medicamento</h2>
+        <!-- FB PASO 4 / FA02 - CU-14 FINAL -->
+
+        <div class="card" style="max-width: 720px;">
+            <div class="card-body">
+                <!-- FB PASOS 4-6 / FA02 - CU-14 INICIO -->
+                <form th:action="@{/admin/medicamentos/guardar}" th:object="${registro}" method="post" novalidate>
+                    <input type="hidden" th:field="*{id}">
+                    <!-- FB PASO 5 - CU-14 INICIO -->
+                    <div class="mb-3">
+                        <label class="form-label" for="nombre">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" th:field="*{nombre}" th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid'" maxlength="200">
+                        <th:block th:replace="~{fragments/catalogo :: error('nombre')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="descripcion">Descripción <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="3" th:field="*{descripcion}" th:classappend="${#fields.hasErrors('descripcion')} ? 'is-invalid'" maxlength="500"></textarea>
+                        <th:block th:replace="~{fragments/catalogo :: error('descripcion')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="precio">Precio (Q) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" th:field="*{precio}" th:classappend="${#fields.hasErrors('precio')} ? 'is-invalid'" step="0.01" min="0.01">
+                        <th:block th:replace="~{fragments/catalogo :: error('precio')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="unidad">Unidad (tableta, ml, etc.) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" th:field="*{unidad}" th:classappend="${#fields.hasErrors('unidad')} ? 'is-invalid'" maxlength="50">
+                        <th:block th:replace="~{fragments/catalogo :: error('unidad')}"></th:block>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="stockMinimo">Stock mínimo</label>
+                        <input type="number" class="form-control" th:field="*{stockMinimo}" th:classappend="${#fields.hasErrors('stockMinimo')} ? 'is-invalid'" min="0" step="1">
+                        <th:block th:replace="~{fragments/catalogo :: error('stockMinimo')}"></th:block>
+                        <div class="form-text">Opcional. Se usa para la alerta de stock bajo en farmacia (CU-11).</div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" th:field="*{controlado}">
+                        <label class="form-check-label" th:for="${#ids.prev('controlado')}">
+                            <i class="fas fa-shield-halved text-warning me-1"></i>Medicamento controlado
+                        </label>
+                    </div>
+                    <!-- FB PASO 5 - CU-14 FINAL -->
+                    <div th:replace="~{fragments/catalogo :: campoEstado}"></div>
+                    <!-- FB PASO 6 / FA04 / FA05 - CU-14 INICIO -->
+                    <th:block th:replace="~{fragments/catalogo :: botonesForm('/admin/medicamentos')}"></th:block>
+                    <!-- FB PASO 6 / FA04 / FA05 - CU-14 FINAL -->
+                </form>
+                <!-- FB PASOS 4-6 / FA02 - CU-14 FINAL -->
+            </div>
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

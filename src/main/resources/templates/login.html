@@ -1,163 +1,72 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Hospital Central</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #0d6efd;
-            --secondary-color: #6c757d;
-            --success-color: #198754;
-            --danger-color: #dc3545;
-            --light-bg: #f0f2f5;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--light-bg) 0%, #e9ecef 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-container {
-            max-width: 450px;
-            width: 100%;
-            padding: 2rem;
-        }
-
-        .login-card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,.1);
-            overflow: hidden;
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .login-header i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .login-body {
-            padding: 2rem;
-        }
-
-        .form-floating > label {
-            color: #6c757d;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-
-        .btn-login {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-            border: none;
-            padding: 0.75rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-        }
-
-        .alert {
-            border-radius: 10px;
-        }
-
-        .divider {
-            text-align: center;
-            margin: 1.5rem 0;
-            position: relative;
-        }
-
-        .divider::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 45%;
-            height: 1px;
-            background: #dee2e6;
-        }
-
-        .divider::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            top: 50%;
-            width: 45%;
-            height: 1px;
-            background: #dee2e6;
-        }
-
-        .back-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .back-link:hover {
-            color: #0a58ca;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body>
+<body class="login-page">
 <div class="login-container">
     <div class="card login-card">
         <div class="login-header">
             <i class="fas fa-hospital-alt"></i>
             <h3 class="mb-0">Hospital Central</h3>
-            <p class="mb-0 mt-2">Sistema de Citas Médicas</p>
+            <p class="mb-0 mt-2" th:text="${panelAdmin} ? 'Acceso Panel Administrativo' : 'Sistema de Citas Médicas'">Sistema de Citas Médicas</p>
         </div>
 
         <div class="login-body">
-            <!-- Mensaje de éxito por registro -->
+            <!-- FB PASOS 13-15 - CU-02 INICIO -->
+            <!-- Registro exitoso (CU-02) -->
             <div th:if="${param.registro}" class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>¡Registro exitoso! Por favor, inicie sesión.
+                <i class="fas fa-check-circle me-2"></i>¡Registro exitoso! Su cuenta ha sido creada. Ahora puede iniciar sesión con sus credenciales.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+            <!-- FB PASOS 13-15 - CU-02 FINAL -->
 
-            <!-- Mensaje de error de autenticación -->
-            <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>Usuario o contraseña incorrectos. Intente nuevamente.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-
-            <!-- Mensaje de logout -->
+            <!-- Cierre de sesión -->
             <div th:if="${param.logout}" class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="fas fa-info-circle me-2"></i>Ha cerrado sesión correctamente.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
-            <!-- Mensaje de error personalizado (Mostrará los intentos restantes) -->
+            <!-- FB PASO 8 - CU-00 INICIO -->
+            <!-- Bienvenida tras verificar el DPI (RN-CU00-01) -->
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-user-check me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <!-- FB PASO 8 - CU-00 FINAL -->
+
+            <!-- FA06 - CU-00 INICIO -->
+            <!-- FA06: credenciales incorrectas con intentos restantes -->
             <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-circle me-2"></i>
                 <span th:text="${errorMsg}"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+            <!-- FA06 - CU-00 FINAL -->
 
-            <!-- Formulario de login -->
+            <!-- FA07 - CU-00 INICIO -->
+            <!-- FA07: cuenta bloqueada. Mientras dure, los campos van deshabilitados. -->
+            <div th:if="${minutosBloqueo != null}" class="alert alert-warning" role="alert">
+                <i class="fas fa-lock me-2"></i>
+                <strong>Cuenta bloqueada temporalmente.</strong>
+                Intente de nuevo en <span id="contadorBloqueo"
+                                          th:attr="data-minutos=${minutosBloqueo}"
+                                          th:text="${minutosBloqueo} + ' minuto(s)'">15 minuto(s)</span>.
+            </div>
+            <!-- FA07 - CU-00 FINAL -->
+
+            <!-- FB PASO 9 - CU-00 INICIO -->
             <form th:action="@{/procesar-login}" method="POST">
+                <input type="hidden" name="origen" th:value="${panelAdmin} ? 'admin' : 'portal'">
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="username" name="username"
-                           placeholder="Nombre de usuario" required autofocus>
+                           placeholder="Nombre de usuario" required autofocus
+                           th:disabled="${minutosBloqueo != null}">
                     <label for="username">
                         <i class="fas fa-user me-2"></i>Nombre de Usuario
                     </label>
@@ -165,36 +74,87 @@
 
                 <div class="form-floating mb-4">
                     <input type="password" class="form-control" id="password" name="password"
-                           placeholder="Contraseña" required>
+                           placeholder="Contraseña" required
+                           th:disabled="${minutosBloqueo != null}">
                     <label for="password">
                         <i class="fas fa-lock me-2"></i>Contraseña
                     </label>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-login w-100 mb-3">
+                <button type="submit" id="btnLogin" class="btn btn-primary btn-login w-100 mb-3"
+                        th:disabled="${minutosBloqueo != null}">
                     <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                 </button>
             </form>
+            <!-- FB PASO 9 - CU-00 FINAL -->
 
-            <div class="divider">
-                <span class="bg-white px-3 text-muted">¿No tiene cuenta?</span>
-            </div>
+            <th:block th:unless="${panelAdmin}">
+                <div class="divider">
+                    <span class="bg-white px-3 text-muted">¿No tiene cuenta?</span>
+                </div>
 
-            <div class="text-center">
-                <a href="/" class="back-link">
-                    <i class="fas fa-arrow-left me-1"></i>Volver al Portal Principal
+                <div class="text-center">
+                    <a href="/registro" class="back-link">
+                        <i class="fas fa-user-plus me-1"></i>Registrarse como paciente
+                    </a>
+                </div>
+            </th:block>
+
+            <hr class="my-4">
+
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="/" class="back-link small">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Portal
                 </a>
+                <!-- FA09 - CU-00 INICIO -->
+                <!-- FA09: acceso al panel interno -->
+                <a th:unless="${panelAdmin}" href="/admin/login" class="back-link small">
+                    <i class="fas fa-user-shield me-1"></i>Acceso Panel Administrativo
+                </a>
+                <a th:if="${panelAdmin}" href="/login" class="back-link small">
+                    <i class="fas fa-user me-1"></i>Acceso de pacientes
+                </a>
+                <!-- FA09 - CU-00 FINAL -->
             </div>
         </div>
     </div>
 
     <div class="text-center mt-4">
         <p class="text-muted mb-0">
-            <small>&copy; 2024 Hospital Central. Todos los derechos reservados.</small>
+            <small>&copy; 2026 Hospital Central. Todos los derechos reservados.</small>
         </p>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FA07 - CU-00 INICIO -->
+<script>
+    // FA07: contador regresivo. Al llegar a cero se reactiva el formulario
+    // para que el usuario no tenga que recargar la pagina a mano.
+    (function () {
+        const contador = document.getElementById('contadorBloqueo');
+        if (!contador) return;
+
+        let restantes = parseInt(contador.dataset.minutos, 10) * 60; // en segundos
+
+        const tick = setInterval(function () {
+            restantes--;
+            if (restantes <= 0) {
+                clearInterval(tick);
+                document.getElementById('username').disabled = false;
+                document.getElementById('password').disabled = false;
+                document.getElementById('btnLogin').disabled = false;
+                contador.parentElement.className = 'alert alert-success';
+                contador.parentElement.innerHTML =
+                    'El bloqueo ha terminado. Ya puede intentar iniciar sesión de nuevo.';
+                return;
+            }
+            const min = Math.floor(restantes / 60);
+            const seg = restantes % 60;
+            contador.textContent = min + ':' + (seg < 10 ? '0' : '') + seg;
+        }, 1000);
+    })();
+</script>
+<!-- FA07 - CU-00 FINAL -->
 </body>
 </html>

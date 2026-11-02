@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .cita-card { border-left: 6px solid #f0ad4e; }
+        .dato th { font-weight: 400; color: var(--muted-text); width: 38%; }
+        .monto { font-size: 1.6rem; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <span class="navbar-brand"><i class="fas fa-cash-register me-2"></i>Caja</span>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 820px;">
+
+    <!-- Mensajes (flash de errores del cobro, o validación de la búsqueda) -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- FB PASO 1 - CU-06 INICIO -->
+    <!-- ===================== Buscador (RN-CU06-01) ===================== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <h5 class="mb-1"><i class="fas fa-magnifying-glass me-2"></i>Buscar cita pendiente de pago</h5>
+                <!-- FB PASO 1 - CU-10 INICIO -->
+                <a th:href="@{/caja/laboratorio}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-vial me-1"></i>Cobro Lab
+                </a>
+                <!-- FB PASO 1 - CU-10 FINAL -->
+            </div>
+            <p class="text-muted small mb-3">Solo se muestran citas con estado "Pendiente de pago" y reserva vigente.</p>
+            <form th:action="@{/caja/buscar}" method="get">
+                <!-- Botones de alternancia "Por No. Cita" / "Por DPI" (FA02) -->
+                <div class="btn-group mb-3" role="group">
+                    <input type="radio" class="btn-check" name="tipo" id="tipoNumero" value="numero"
+                           th:checked="${tipo == null or tipo == 'numero'}">
+                    <label class="btn btn-outline-primary" for="tipoNumero">Por No. Cita</label>
+                    <input type="radio" class="btn-check" name="tipo" id="tipoDpi" value="dpi"
+                           th:checked="${tipo == 'dpi'}">
+                    <label class="btn btn-outline-primary" for="tipoDpi">Por DPI</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="valor" id="valor" class="form-control form-control-lg"
+                           th:value="${valor}" autocomplete="off" autofocus
+                           placeholder="Ej. CITA-20261006-1234">
+                    <button type="submit" class="btn btn-primary px-4">Buscar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- FB PASO 1 - CU-06 FINAL -->
+
+    <!-- ===================== Resultado ===================== -->
+    <th:block th:if="${resultado != null}" th:with="t=${resultado.tipo.name()}">
+
+        <!-- FA02 - CU-06 INICIO -->
+        <!-- FA02: ninguna cita pendiente (sin resultados por número, DPI inexistente
+             o paciente sin pendientes: para la caja es el mismo mensaje) -->
+        <div th:if="${t != 'CITAS_ENCONTRADAS'}" class="alert alert-warning">
+            <i class="fas fa-circle-info me-2"></i>
+            No se encontraron citas pendientes de pago para el criterio ingresado.
+        </div>
+        <!-- FA02 - CU-06 FINAL -->
+
+        <!-- FB PASO 2 - CU-06 INICIO -->
+        <th:block th:if="${t == 'CITAS_ENCONTRADAS'}">
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">
+                <span th:text="${#lists.size(resultado.citas)}">1</span> cita(s) pendiente(s) de pago
+            </h6>
+
+            <div th:each="c : ${resultado.citas}" class="card shadow-sm mb-3 cita-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-0" th:text="${c.nombrePaciente}">Luis Ramírez</h5>
+                            <small class="text-muted" th:text="${c.numeroCita}">CITA-CAJA-01</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">Monto a cobrar</div>
+                            <div class="monto"
+                                 th:text="${c.monto != null} ? 'Q' + ${#numbers.formatDecimal(c.monto, 1, 'COMMA', 2, 'POINT')} : 'Sin precio'">Q150.00</div>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm table-borderless dato mb-2">
+                        <tr><th>Especialidad</th><td th:text="${c.nombreEspecialidad}">Medicina General</td></tr>
+                        <tr><th>Médico</th><td th:text="${c.nombreMedico}">Dr. Carlos Méndez</td></tr>
+                        <tr><th>Sucursal</th><td th:text="${c.nombreSucursal}">Sede Central</td></tr>
+                        <tr><th>Fecha y hora</th>
+                            <td th:text="${#temporals.format(c.fechaHora, 'dd/MM/yyyy HH:mm')}">12/10/2026 14:00</td></tr>
+                    </table>
+
+                    <a th:href="@{/caja/citas/{id}/cobro(id=${c.id})}" class="btn btn-success">
+                        <i class="fas fa-cash-register me-1"></i>Cobrar
+                    </a>
+                </div>
+            </div>
+        </th:block>
+        <!-- FB PASO 2 - CU-06 FINAL -->
+    </th:block>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Cambia el ejemplo del campo según el tipo de búsqueda elegido
+    (function () {
+        const valor = document.getElementById('valor');
+        const ejemplos = { numero: 'Ej. CITA-20261006-1234', dpi: 'DPI de 13 dígitos' };
+        document.querySelectorAll('input[name="tipo"]').forEach(r => {
+            r.addEventListener('change', () => { valor.placeholder = ejemplos[r.value]; valor.focus(); });
+            if (r.checked) valor.placeholder = ejemplos[r.value];
+        });
+    })();
+</script>
+</body>
+</html>

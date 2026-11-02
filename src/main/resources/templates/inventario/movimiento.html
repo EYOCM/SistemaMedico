@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimiento de inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<nav th:replace="~{inventario/fragmentos :: barra}"></nav>
+
+<div class="container mb-5" style="max-width: 760px;">
+    <!-- FB PASO 9 - CU-15 INICIO -->
+    <th:block th:replace="~{inventario/fragmentos :: alertas}"></th:block>
+    <!-- FB PASO 9 - CU-15 FINAL -->
+
+    <a th:href="@{/inventario/movimientos}" class="small text-decoration-none"><i class="fas fa-arrow-left me-1"></i>Bitácora</a>
+    <!-- FB PASO 2 - CU-15 INICIO -->
+    <div class="card shadow-sm mt-2">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Movimiento #<span th:text="${m.id}">1</span></h5>
+            <div>
+                <th:block th:replace="~{inventario/fragmentos :: tipo(${m})}"></th:block>
+                <span th:if="${m.activo}" class="badge bg-success">Activo</span>
+                <span th:unless="${m.activo}" class="badge bg-secondary">Inactivo</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div th:unless="${m.activo}" class="alert alert-secondary small">
+                Este movimiento está desactivado: no cuenta en el resumen mensual. El stock no se modificó al desactivarlo.
+            </div>
+            <table class="table table-borderless mb-0">
+                <tr><th class="text-muted fw-normal w-25">Medicamento</th>
+                    <td><a th:href="@{/inventario/movimientos(medicamentoId=${m.medicamentoId},sucursalId=${m.sucursalId})}" th:text="${m.medicamento}">Amoxicilina</a></td></tr>
+                <tr><th class="text-muted fw-normal">Sede</th><td th:text="${m.sucursal}">Sede Central</td></tr>
+                <tr><th class="text-muted fw-normal">Cantidad</th><td><th:block th:replace="~{inventario/fragmentos :: cantidad(${m})}"></th:block></td></tr>
+                <tr><th class="text-muted fw-normal">Stock</th>
+                    <td><span th:text="${m.stockAnterior}">5</span> <i class="fas fa-arrow-right mx-1 text-muted"></i> <strong th:text="${m.stockNuevo}">105</strong></td></tr>
+                <tr th:if="${m.costoUnitario != null}"><th class="text-muted fw-normal">Costo unitario</th>
+                    <td th:text="'Q' + ${#numbers.formatDecimal(m.costoUnitario, 1, 'COMMA', 2, 'POINT')}">Q1.80</td></tr>
+                <tr><th class="text-muted fw-normal" th:text="${m.etiquetaReferencia}">Referencia</th><td th:text="${m.referencia} ?: '—'">FAC-001</td></tr>
+                <tr th:if="${m.motivo != null}"><th class="text-muted fw-normal" th:text="${m.etiquetaMotivo}">Motivo</th>
+                    <td class="text-break" th:text="${m.motivo}">—</td></tr>
+                <tr><th class="text-muted fw-normal">Registrado por</th><td th:text="${m.usuario}">farmaceutico1</td></tr>
+                <tr><th class="text-muted fw-normal">Fecha</th><td th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm:ss')}">—</td></tr>
+            </table>
+        </div>
+        <div class="card-footer bg-white d-flex gap-2 flex-wrap">
+            <a th:href="@{/inventario/movimientos/nuevo}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Registrar otro</a>
+            <a th:href="@{/inventario/movimientos/nuevo(medicamentoId=${m.medicamentoId},sucursalId=${m.sucursalId})}"
+               class="btn btn-outline-primary">Otro de este medicamento</a>
+            <form th:replace="~{inventario/fragmentos :: estado(${m}, '/inventario/movimientos/' + ${m.id})}"></form>
+            <span th:unless="${m.manual}" class="small text-muted align-self-center">Generado por el sistema al despachar; no se puede desactivar.</span>
+        </div>
+    </div>
+    <!-- FB PASO 2 - CU-15 FINAL -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

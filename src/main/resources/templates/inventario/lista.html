@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<nav th:replace="~{inventario/fragmentos :: barra}"></nav>
+
+<div class="container mb-5">
+    <th:block th:replace="~{inventario/fragmentos :: alertas}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-0">Existencias</h2>
+            <small class="text-muted">Stock actual por medicamento y sede. En rojo los que están en su mínimo o por debajo.</small>
+        </div>
+        <!-- FB PASO 3 - CU-15 INICIO -->
+        <a th:href="@{/inventario/movimientos/nuevo}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Nuevo movimiento</a>
+        <!-- FB PASO 3 - CU-15 FINAL -->
+    </div>
+
+    <!-- FB PASO 1 - CU-15 INICIO -->
+    <form method="get" th:action="@{/inventario}" class="row g-2 mb-3">
+        <input type="hidden" name="tam" th:value="${registros.size}">
+        <div class="col-md-5">
+            <input type="text" name="texto" class="form-control" th:value="${texto}" placeholder="Buscar medicamento por nombre">
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i>Buscar</button></div>
+        <div class="col-auto"><a th:href="@{/inventario}" class="btn btn-outline-secondary">Limpiar</a></div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle bg-white">
+            <thead class="table-dark">
+            <tr>
+                <th>Medicamento</th>
+                <th th:if="${alcance.administrador}">Sede</th>
+                <th>Unidad</th>
+                <th class="text-end">Stock actual</th>
+                <th class="text-end">Mínimo</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${registros.content}" th:classappend="${i.bajo} ? 'table-danger'">
+                <td>
+                    <span th:text="${i.medicamento}">Amoxicilina</span>
+                    <span th:if="${i.controlado}" class="badge bg-warning text-dark ms-1">Controlado</span>
+                </td>
+                <td th:if="${alcance.administrador}" th:text="${i.sucursal}">Sede Central</td>
+                <td th:text="${i.unidad}">cápsula</td>
+                <td class="text-end fw-semibold" th:text="${i.stockActual}">100</td>
+                <td class="text-end" th:text="${i.stockMinimo}">20</td>
+                <td>
+                    <span th:if="${i.bajo}" class="badge bg-danger">Stock bajo</span>
+                    <span th:unless="${i.bajo}" class="badge bg-success">Disponible</span>
+                </td>
+                <td class="text-center text-nowrap">
+                    <a th:href="@{/inventario/{id}(id=${i.id})}" class="btn btn-sm btn-outline-primary">Ver</a>
+                    <a th:href="@{/inventario/movimientos/nuevo(medicamentoId=${i.medicamentoId},sucursalId=${i.sucursalId})}"
+                       class="btn btn-sm btn-outline-secondary">Movimiento</a>
+                </td>
+            </tr>
+            <tr th:if="${registros.content.isEmpty()}">
+                <td colspan="7" class="text-center text-muted py-4">No se encontraron resultados.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <span class="small text-muted">
+            <span th:text="${registros.totalElements}">0</span> registro(s) &mdash;
+            página <span th:text="${registros.number + 1}">1</span> de
+            <span th:text="${registros.totalPages > 0 ? registros.totalPages : 1}">1</span>
+        </span>
+        <nav th:if="${registros.totalPages > 1}">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" th:each="p : ${#numbers.sequence(1, registros.totalPages)}"
+                    th:classappend="${p == registros.number + 1} ? 'active'">
+                    <a class="page-link" th:href="@{/inventario(texto=${texto},tam=${registros.size},pagina=${p})}" th:text="${p}">1</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <!-- FB PASO 1 - CU-15 FINAL -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

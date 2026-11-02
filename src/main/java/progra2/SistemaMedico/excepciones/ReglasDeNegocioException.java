@@ -1,6 +1,5 @@
 package progra2.SistemaMedico.excepciones;
 
-import org.attoparser.IMarkupParser;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.http.HttpStatus;
 

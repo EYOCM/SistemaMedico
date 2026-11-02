@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enfermería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .cita-card { border-left: 6px solid #2E5C9A; }
+        .cita-card.emergencia { border-left-color: #dc3545; }
+        .proceso-card { border-left: 6px solid #6f42c1; }
+        .turno { font-size: 1.6rem; font-weight: 700; min-width: 3.2rem; text-align: center; }
+        .dato { color: var(--muted-text); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <span class="navbar-brand"><i class="fas fa-user-nurse me-2"></i>Enfermería</span>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 980px;">
+
+    <!-- FB PASO 1 - CU-07 INICIO -->
+    <!-- Anuncio del llamado (paso 1): se lee en voz alta -->
+    <div th:if="${anuncio}" class="alert alert-primary d-flex align-items-center justify-content-between gap-3">
+        <div><i class="fas fa-bullhorn me-2"></i><span id="textoAnuncio" th:text="${anuncio}">Turno número 1…</span></div>
+        <button type="button" class="btn btn-sm btn-primary" id="btnRepetir">
+            <i class="fas fa-volume-high me-1"></i>Repetir anuncio
+        </button>
+    </div>
+    <!-- FB PASO 1 - CU-07 FINAL -->
+
+    <!-- FB PASO 12 / FA01 - CU-07 INICIO -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FB PASO 12 / FA01 - CU-07 FINAL -->
+
+    <th:block th:if="${panel != null}">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <div>
+                <h4 class="mb-0">Panel de enfermería</h4>
+                <div class="dato" th:text="${panel.nombreSede} + ' · ' + ${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">Sede Central · 14/10/2026</div>
+            </div>
+            <small class="dato"><i class="fas fa-rotate me-1"></i>Se actualiza cada 30 s</small>
+        </div>
+
+        <div class="row g-4">
+            <!-- FB PASO 1 - CU-07 INICIO -->
+            <!-- En sala de espera -->
+            <div class="col-lg-7">
+                <h6 class="text-uppercase small fw-bold dato mb-2">
+                    <i class="fas fa-couch me-1"></i>En sala de espera
+                    (<span th:text="${#lists.size(panel.enSala)}">0</span>)
+                </h6>
+
+                <div th:if="${#lists.isEmpty(panel.enSala)}" class="card card-body text-center dato">
+                    No hay pacientes en sala de espera.
+                </div>
+
+                <div th:each="c, it : ${panel.enSala}" class="card shadow-sm mb-2 cita-card"
+                     th:classappend="${c.prioridad == 'EMERGENCIA'} ? 'emergencia'">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="turno" th:text="${it.count}">1</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">
+                                <span th:text="${c.nombrePaciente}">Elena Ruiz</span>
+                                <span th:if="${c.prioridad == 'EMERGENCIA'}" class="badge bg-danger ms-1">EMERGENCIA</span>
+                            </div>
+                            <div class="small dato">
+                                <span th:text="${c.numeroCita}">CITA-ENF-03</span> ·
+                                <span th:text="${c.nombreEspecialidad}">Cardiología</span> ·
+                                Cita <span th:text="${#temporals.format(c.fechaHora, 'HH:mm')}">09:00</span> ·
+                                Llegó <span th:text="${c.horaLlegada != null} ? ${#temporals.format(c.horaLlegada, 'HH:mm')} : '—'">08:50</span>
+                            </div>
+                        </div>
+                        <form method="post" th:action="@{/enfermeria/citas/{id}/llamar(id=${c.id})}" class="m-0 form-llamar">
+                            <input type="hidden" name="turno" th:value="${it.count}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-bullhorn me-1"></i>Llamar y Tomar Signos
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- FB PASO 1 - CU-07 FINAL -->
+
+            <!-- FB PASO 2 - CU-07 INICIO -->
+            <!-- En toma de signos -->
+            <div class="col-lg-5">
+                <h6 class="text-uppercase small fw-bold dato mb-2">
+                    <i class="fas fa-heart-pulse me-1"></i>En toma de signos
+                    (<span th:text="${#lists.size(panel.enProceso)}">0</span>)
+                </h6>
+
+                <div th:if="${#lists.isEmpty(panel.enProceso)}" class="card card-body text-center dato">
+                    Nadie en toma de signos.
+                </div>
+
+                <div th:each="c : ${panel.enProceso}" class="card shadow-sm mb-2 proceso-card">
+                    <div class="card-body">
+                        <div class="fw-semibold">
+                            <span th:text="${c.nombrePaciente}">Sofía Morales</span>
+                            <span th:if="${c.prioridad == 'EMERGENCIA'}" class="badge bg-danger ms-1">EMERGENCIA</span>
+                        </div>
+                        <div class="small dato mb-2" th:text="${c.numeroCita} + ' · ' + ${c.nombreEspecialidad}">CITA-ENF-04 · Medicina General</div>
+                        <a th:href="@{/enfermeria/citas/{id}/signos(id=${c.id})}" class="btn btn-success btn-sm">
+                            <i class="fas fa-notes-medical me-1"></i>Registrar Signos Vitales
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- FB PASO 2 - CU-07 FINAL -->
+        </div>
+    </th:block>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FB PASO 1 - CU-07 INICIO -->
+<script>
+    (function () {
+        // Anuncio por voz (Web Speech API del navegador)
+        const texto = document.getElementById('textoAnuncio');
+        function anunciar() {
+            if (!texto || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const voz = new SpeechSynthesisUtterance(texto.textContent);
+            voz.lang = 'es-MX';
+            voz.rate = 0.95;
+            window.speechSynthesis.speak(voz);
+        }
+        // Algunos navegadores bloquean la voz si no hubo un clic en esta página:
+        // por eso también existe el botón "Repetir anuncio".
+        anunciar();
+        const repetir = document.getElementById('btnRepetir');
+        if (repetir) repetir.addEventListener('click', anunciar);
+
+        // Evitar doble clic en "Llamar"
+        document.querySelectorAll('.form-llamar').forEach(f => f.addEventListener('submit', () => {
+            const b = f.querySelector('button');
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Llamando...';
+        }));
+
+        // Actualización automática cada 30 s (GET limpio, sin reenviar nada)
+        setTimeout(() => { window.location.href = window.location.pathname; }, 30000);
+    })();
+</script>
+<!-- FB PASO 1 - CU-07 FINAL -->
+</body>
+</html>

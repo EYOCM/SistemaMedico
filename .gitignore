@@ -1,0 +1,23 @@
+# Compilados de Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Otros IDE
+.vscode/
+.sts4-cache/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Secretos locales (nunca subir)
+VARIABLES-LOCALES.txt
+*.env
+.env

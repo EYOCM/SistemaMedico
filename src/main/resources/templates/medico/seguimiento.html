@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar seguimiento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato { color: var(--muted-text); }
+        .horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: .5rem; }
+        .tipo-card { cursor: pointer; }
+        .btn-check:checked + .tipo-card { border-color: var(--bs-success); background: rgba(25, 135, 84, .08); }
+        textarea { resize: vertical; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/medico}"><i class="fas fa-user-doctor me-2"></i>Consulta médica</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 860px;">
+
+    <!-- FA01 - CU-12 INICIO -->
+    <!-- FA01 y validaciones -->
+    <div th:if="${error}" class="alert alert-danger">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+    </div>
+    <!-- FA01 - CU-12 FINAL -->
+
+    <!-- FB PASOS 2-3 - CU-12 INICIO -->
+    <!-- Paso 3: banner verde con los datos pre-cargados -->
+    <div class="alert alert-success shadow-sm">
+        <h5 class="alert-heading mb-2"><i class="fas fa-calendar-plus me-2"></i>Agendar cita de seguimiento</h5>
+        <div class="row small g-1">
+            <div class="col-sm-6"><span class="dato">Paciente:</span> <strong th:text="${prep.nombrePaciente}">Paciente</strong></div>
+            <div class="col-sm-6"><span class="dato">Médico:</span> <strong th:text="${prep.nombreMedico}">Médico</strong></div>
+            <div class="col-sm-6"><span class="dato">Especialidad:</span> <strong th:text="${prep.nombreEspecialidad}">Especialidad</strong></div>
+            <div class="col-sm-6"><span class="dato">Sucursal:</span> <strong th:text="${prep.nombreSucursal}">Sucursal</strong></div>
+            <div class="col-12"><span class="dato">Consulta de origen:</span> <strong th:text="${prep.numeroCita}">CITA</strong></div>
+        </div>
+    </div>
+    <!-- FB PASOS 2-3 - CU-12 FINAL -->
+
+    <form th:action="@{/medico/citas/{id}/seguimiento(id=${prep.citaId})}" th:object="${seguimiento}" method="post" novalidate id="formSeguimiento">
+
+        <!-- FB PASOS 3-4 - CU-12 INICIO -->
+        <!-- Pasos 3–4: tipo de seguimiento (RN-CU11-01) -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3"><span class="badge bg-success me-2">1</span>Tipo de seguimiento <span class="text-danger">*</span></h6>
+                <div class="row g-2">
+                    <div class="col-md-6" th:each="t : ${tipos}">
+                        <input type="radio" class="btn-check" th:field="*{tipo}" th:value="${t.name()}">
+                        <label class="card tipo-card h-100 p-3" th:for="${#ids.prev('tipo')}">
+                            <strong th:text="${t.descripcion}">Tipo</strong>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- FB PASOS 3-4 - CU-12 FINAL -->
+
+        <!-- FB PASO 5 - CU-12 INICIO -->
+        <!-- Paso 5: calendario del mismo médico (RN-CU11-02) -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3"><span class="badge bg-success me-2">2</span>Fecha y hora <span class="text-danger">*</span></h6>
+                <div class="mb-3" style="max-width: 16rem;">
+                    <label class="form-label small dato" for="fecha">Fecha</label>
+                    <input type="date" class="form-control" id="fecha" th:field="*{fecha}"
+                           th:attr="min=${prep.primerDia}">
+                </div>
+                <div class="small dato mb-2">Horarios disponibles de <span th:text="${prep.nombreMedico}">médico</span>:</div>
+                <div class="horas" id="horas">
+                    <th:block th:each="h : ${prep.horarios}">
+                        <input type="radio" class="btn-check" name="hora" th:id="'hora-' + ${h}" th:value="${h}"
+                               th:checked="${h == seguimiento.hora}">
+                        <label class="btn btn-outline-success" th:for="'hora-' + ${h}" th:text="${h}">08:00</label>
+                    </th:block>
+                </div>
+                <div id="sinHoras" class="text-warning-emphasis small" th:classappend="${#lists.isEmpty(prep.horarios)} ? '' : 'd-none'">
+                    <i class="fas fa-triangle-exclamation me-1"></i>No hay horarios disponibles para esa fecha. Elija otro día.
+                </div>
+            </div>
+        </div>
+        <!-- FB PASO 5 - CU-12 FINAL -->
+
+        <!-- FB PASO 6 - CU-12 INICIO -->
+        <!-- Paso 6: motivo y prioridad (RN-CU11-03) -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3"><span class="badge bg-success me-2">3</span>Confirmación</h6>
+                <div class="mb-3">
+                    <label class="form-label">Motivo / observaciones del seguimiento <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="3" th:field="*{observaciones}" id="observaciones"
+                              placeholder="Ej.: Revisar respuesta al tratamiento antihipertensivo y resultados de creatinina."></textarea>
+                    <div class="form-text text-end"><span id="contador">0</span> / 2000 caracteres (mínimo 10)</div>
+                </div>
+                <label class="form-label d-block">Prioridad</label>
+                <div class="btn-group" role="group">
+                    <th:block th:each="p : ${prioridades}">
+                        <input type="radio" class="btn-check" th:field="*{prioridad}" th:value="${p.name()}">
+                        <label class="btn btn-outline-primary" th:for="${#ids.prev('prioridad')}" th:text="${p.descripcion}">Normal</label>
+                    </th:block>
+                </div>
+                <div class="form-text">La cita queda <strong>pendiente de pago</strong>: el paciente puede pagarla en línea (le llega el enlace por correo) o en caja.</div>
+            </div>
+        </div>
+        <!-- FB PASO 6 - CU-12 FINAL -->
+
+        <div class="d-flex gap-2">
+            <!-- FB PASO 7 - CU-12 INICIO -->
+            <button type="submit" class="btn btn-success btn-lg" id="btnConfirmar">
+                <i class="fas fa-calendar-check me-1"></i>Confirmar seguimiento
+            </button>
+            <!-- FB PASO 7 - CU-12 FINAL -->
+            <!-- FA02 - CU-12 INICIO -->
+            <!-- FA02: volver a la consulta sin guardar nada -->
+            <a th:href="@{/medico/citas/{id}/consulta(id=${prep.citaId})}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+            <!-- FA02 - CU-12 FINAL -->
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    (function () {
+        const urlHorarios = /*[[@{/medico/citas/{id}/seguimiento/horarios(id=${prep.citaId})}]]*/ '/horarios';
+        const fecha = document.getElementById('fecha');
+        const horas = document.getElementById('horas');
+        const sinHoras = document.getElementById('sinHoras');
+
+        function pintar(lista) {
+            horas.innerHTML = '';
+            lista.forEach(h => {
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.className = 'btn-check';
+                input.name = 'hora';
+                input.id = 'hora-' + h;
+                input.value = h;
+                const label = document.createElement('label');
+                label.className = 'btn btn-outline-success';
+                label.htmlFor = input.id;
+                label.textContent = h;
+                horas.append(input, label);
+            });
+            sinHoras.classList.toggle('d-none', lista.length > 0);
+        }
+
+        // FB PASO 5 - CU-12 INICIO
+        // Paso 5: al cambiar la fecha se piden al servidor los horarios libres de ese día
+        fecha.addEventListener('change', () => {
+            if (!fecha.value) { pintar([]); return; }
+            fetch(urlHorarios + '?fecha=' + fecha.value, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.ok ? r.json() : [])
+                .then(pintar)
+                .catch(() => pintar([]));
+        });
+        // FB PASO 5 - CU-12 FINAL
+
+        // FB PASO 6 - CU-12 INICIO
+        const obs = document.getElementById('observaciones');
+        const contador = document.getElementById('contador');
+        const contar = () => { contador.textContent = obs.value.trim().length; };
+        obs.addEventListener('input', contar);
+        contar();
+        // FB PASO 6 - CU-12 FINAL
+
+        // FB PASO 7 - CU-12 INICIO
+        document.getElementById('formSeguimiento').addEventListener('submit', () => {
+            const b = document.getElementById('btnConfirmar');
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Agendando...';
+        });
+        // FB PASO 7 - CU-12 FINAL
+    })();
+</script>
+</body>
+</html>

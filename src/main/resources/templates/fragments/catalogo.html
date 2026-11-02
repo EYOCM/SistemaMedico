@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- CU-14: piezas compartidas por todos los catálogos -->
+
+<th:block th:fragment="alertas">
+    <!-- FB PASO 8 / FA02 / FA03 - CU-14 INICIO -->
+    <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FB PASO 8 / FA02 / FA03 - CU-14 FINAL -->
+    <!-- FA02 / FA03 - CU-14 INICIO -->
+    <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FA02 / FA03 - CU-14 FINAL -->
+</th:block>
+
+<!-- FB PASOS 1-3 - CU-14 INICIO -->
+<div th:fragment="encabezado(titulo, url)" class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a th:href="@{/admin/catalogos}" class="small text-decoration-none"><i class="fas fa-arrow-left me-1"></i>Catálogos</a>
+        <h2 class="mb-0" th:text="${titulo}">Catálogo</h2>
+    </div>
+    <a th:href="@{${url} + '/nuevo'}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Crear</a>
+</div>
+<!-- FB PASOS 1-3 - CU-14 FINAL -->
+
+<!-- FB PASO 2 - CU-14 INICIO -->
+<div th:fragment="filtro(url)" class="card mb-4">
+    <div class="card-body">
+        <form method="GET" th:action="@{${url}}" class="row g-2 align-items-end">
+            <input type="hidden" name="tam" th:value="${registros.size}">
+            <div class="col-md-5">
+                <label class="form-label small text-muted" for="texto">Buscar por nombre</label>
+                <input type="text" id="texto" name="texto" class="form-control" th:value="${texto}" placeholder="Escriba parte del nombre">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Buscar</button>
+            </div>
+            <div class="col-md-2">
+                <a th:href="@{${url}}" class="btn btn-outline-secondary w-100">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- FB PASO 2 - CU-14 FINAL -->
+
+<th:block th:fragment="estado(activo)">
+    <span th:if="${activo}" class="badge bg-success">Activo</span>
+    <span th:unless="${activo}" class="badge bg-danger">Inactivo</span>
+</th:block>
+
+<div th:fragment="acciones(url, id, nombre, activo)" class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">&#8942;</button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <!-- FA02 - CU-14 INICIO -->
+        <li>
+            <a class="dropdown-item" th:href="@{${url} + '/' + ${id} + '/editar'}"><i class="fas fa-pen me-2"></i>Editar</a>
+        </li>
+        <!-- FA02 - CU-14 FINAL -->
+        <!-- FA03 - CU-14 INICIO -->
+        <li th:if="${activo}">
+            <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                    th:attr="data-url=@{${url} + '/' + ${id} + '/eliminar'}, data-nombre=${nombre}">
+                <i class="fas fa-trash me-2"></i>Eliminar
+            </button>
+        </li>
+        <!-- FA03 - CU-14 FINAL -->
+    </ul>
+</div>
+
+<!-- FA01 - CU-14 INICIO -->
+<tr th:fragment="sinResultados(columnas)">
+    <td th:colspan="${columnas}" class="text-center text-muted py-4">No se encontraron resultados.</td>
+</tr>
+<!-- FA01 - CU-14 FINAL -->
+
+<!-- FB PASO 2 - CU-14 INICIO -->
+<div th:fragment="paginacion(url)" class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <form method="GET" th:action="@{${url}}" class="d-flex align-items-center gap-2">
+        <input type="hidden" name="texto" th:value="${texto}">
+        <label class="small text-muted mb-0" for="tam">Elementos por página</label>
+        <select id="tam" name="tam" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+            <option value="10" th:selected="${registros.size == 10}">10</option>
+            <option value="25" th:selected="${registros.size == 25}">25</option>
+            <option value="50" th:selected="${registros.size == 50}">50</option>
+        </select>
+    </form>
+    <span class="small text-muted">
+        <span th:text="${registros.totalElements}">0</span> registro(s) &mdash;
+        página <span th:text="${registros.number + 1}">1</span> de
+        <span th:text="${registros.totalPages > 0 ? registros.totalPages : 1}">1</span>
+    </span>
+    <nav th:if="${registros.totalPages > 1}">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" th:classappend="${registros.first} ? 'disabled'">
+                <a class="page-link" th:href="@{${url}(texto=${texto},tam=${registros.size},pagina=${registros.number})}">Anterior</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(1, registros.totalPages)}"
+                th:classappend="${i == registros.number + 1} ? 'active'">
+                <a class="page-link" th:href="@{${url}(texto=${texto},tam=${registros.size},pagina=${i})}" th:text="${i}">1</a>
+            </li>
+            <li class="page-item" th:classappend="${registros.last} ? 'disabled'">
+                <a class="page-link" th:href="@{${url}(texto=${texto},tam=${registros.size},pagina=${registros.number + 2})}">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+<!-- FB PASO 2 - CU-14 FINAL -->
+
+<!-- FA03 - CU-14 INICIO -->
+<th:block th:fragment="modalEliminar">
+    <div class="modal fade" id="modalEliminar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-triangle-exclamation text-warning me-2"></i>Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">¿Está seguro que desea eliminar el registro <strong id="nombreEliminar"></strong>? Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <!-- FA04 - CU-14 INICIO -->
+                    <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                    <!-- FA04 - CU-14 FINAL -->
+                    <form id="formEliminar" method="POST">
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('modalEliminar').addEventListener('show.bs.modal', function (evento) {
+            const boton = evento.relatedTarget;
+            document.getElementById('nombreEliminar').textContent = boton.dataset.nombre;
+            document.getElementById('formEliminar').action = boton.dataset.url;
+        });
+    </script>
+</th:block>
+<!-- FA03 - CU-14 FINAL -->
+
+<!-- FB PASO 5 - CU-14 INICIO -->
+<div th:fragment="campoEstado" class="mb-3">
+    <label class="form-label d-block">Estado <span class="text-danger">*</span></label>
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" th:field="*{activo}" value="true">
+        <label class="btn btn-outline-success" th:for="${#ids.prev('activo')}">Activo</label>
+        <input type="radio" class="btn-check" th:field="*{activo}" value="false">
+        <label class="btn btn-outline-danger" th:for="${#ids.prev('activo')}">Inactivo</label>
+    </div>
+</div>
+<!-- FB PASO 5 - CU-14 FINAL -->
+
+<th:block th:fragment="botonesForm(url)">
+    <div class="d-flex gap-2">
+        <!-- FB PASO 6 / FA02 - CU-14 INICIO -->
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-floppy-disk me-1"></i><span th:text="*{id} == null ? 'Crear' : 'Actualizar'">Crear</span>
+        </button>
+        <!-- FB PASO 6 / FA02 - CU-14 FINAL -->
+        <!-- FA04 - CU-14 INICIO -->
+        <a th:href="@{${url}}" class="btn btn-outline-secondary">Cancelar</a>
+        <!-- FA04 - CU-14 FINAL -->
+    </div>
+    <!-- FA05 - CU-14 INICIO -->
+    <div th:if="${errorMsg}" class="alert alert-danger mt-3 mb-0">
+        <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
+    </div>
+    <!-- FA05 - CU-14 FINAL -->
+</th:block>
+
+<!-- FA05 - CU-14 INICIO -->
+<th:block th:fragment="error(campo)">
+    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors(campo)}" th:errors="*{__${campo}__}"></div>
+</th:block>
+<!-- FA05 - CU-14 FINAL -->
+
+</body>
+</html>

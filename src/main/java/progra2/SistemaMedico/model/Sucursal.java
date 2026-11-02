@@ -18,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Sucursal {
+public class Sucursal implements Catalogo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +35,9 @@ public class Sucursal {
 
     @Column(length = 100)
     private String email;
+
+    @Column(length = 250)
+    private String descripcion;
 
     @Column(nullable = false)
     private Boolean activo = true;

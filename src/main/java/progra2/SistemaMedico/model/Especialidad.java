@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,24 +19,28 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 
-public class Especialidad {
-@Id
-@GeneratedValue(strategy = GenerationType.IDENTITY)
-private Long id;
+public class Especialidad implements Catalogo {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-@Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, length = 100, unique = true)
     private String nombre;
 
     @Column(length = 500)
     private String descripcion;
-@Column(nullable = false)
+    @Column(nullable = false)
     private Boolean activo = true;
 
-@CreationTimestamp
+    @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime fechaCreacion;
 
-@UpdateTimestamp
+    @UpdateTimestamp
     private LocalDateTime fechaActualizacion;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal precioConsulta;
+
 }
+

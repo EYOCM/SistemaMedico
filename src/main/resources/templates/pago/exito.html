@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Pago Exitoso!</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .icono-exito {
+            width: 72px; height: 72px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem; font-size: 2rem;
+            background: rgba(25, 135, 84, .12); color: var(--success-color);
+        }
+        .transaccion {
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 1.35rem; font-weight: 700; letter-spacing: .03em;
+            color: var(--primary-color);
+        }
+        .comprobante th { font-weight: 400; color: var(--muted-text); width: 45%; }
+        .comprobante td { font-weight: 500; }
+        .cifra { font-variant-numeric: tabular-nums; }
+        .total-pagado { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        @media print {
+            .no-imprimir { display: none !important; }
+            body { background: #fff !important; }
+            .card { box-shadow: none !important; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5 mb-5" style="max-width: 600px;">
+
+    <div class="card shadow">
+        <div class="card-body p-4 p-md-5">
+
+            <!-- FB PASO 13 - CU-04 INICIO -->
+            <!-- CU-04 paso 13: mensaje literal -->
+            <div class="text-center mb-4">
+                <div class="icono-exito"><i class="fas fa-check"></i></div>
+                <h3 class="mb-2">¡Pago Exitoso!</h3>
+                <p class="text-muted mb-0">
+                    ¡Pago realizado exitosamente! Número de transacción:
+                    <strong th:text="${cita.numeroTransaccion}">AUTH-3F2A9C1E</strong>.
+                    Su cita ha sido confirmada.
+                </p>
+            </div>
+            <!-- FB PASO 13 - CU-04 FINAL -->
+
+            <!-- Número de transacción: lo más visible después del mensaje -->
+            <div class="text-center border rounded py-3 mb-4 bg-light">
+                <div class="small text-muted text-uppercase mb-1">Número de transacción</div>
+                <div class="transaccion" th:text="${cita.numeroTransaccion}">AUTH-3F2A9C1E</div>
+            </div>
+
+            <!-- FB PASO 14 - CU-04 INICIO -->
+            <!-- CU-04 paso 14 + RN-GLOBAL-005: comprobante -->
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">Comprobante de pago</h6>
+            <table class="table table-borderless table-sm comprobante mb-3">
+                <tr><th>Paciente</th>
+                    <td th:text="${cita.nombrePaciente}">Juan Pérez</td></tr>
+                <tr><th>Número de cita</th>
+                    <td th:text="${cita.numeroCita}">CITA-20261003-1234</td></tr>
+                <tr><th>Especialidad</th>
+                    <td th:text="${cita.nombreEspecialidad}">Cardiología</td></tr>
+                <tr><th>Médico</th>
+                    <td th:text="${cita.nombreMedico}">Dr. Roberto Aguilar</td></tr>
+                <tr><th>Sucursal</th>
+                    <td th:text="${cita.nombreSucursal}">Sede Central - Zona 1</td></tr>
+                <tr><th>Fecha de la cita</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy')}">05/10/2026</td></tr>
+                <tr><th>Hora de la cita</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'HH:mm')}">08:00</td></tr>
+                <tr><th>Forma de pago</th>
+                    <td>Tarjeta de crédito / débito</td></tr>
+                <tr><th>Fecha y hora del pago</th>
+                    <td class="cifra" th:text="${#temporals.format(cita.fechaPago, 'dd/MM/yyyy HH:mm')}">03/10/2026 10:15</td></tr>
+            </table>
+
+            <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-4">
+                <span class="fw-semibold">Monto pagado</span>
+                <span class="total-pagado cifra"
+                      th:text="'Q' + ${#numbers.formatDecimal(cita.montoPago, 1, 'COMMA', 2, 'POINT')}">Q350.00</span>
+            </div>
+
+            <!-- CU-04 paso 14: aviso del correo (T-04-6). El correo sale en segundo plano (@Async). -->
+            <div class="alert alert-info small mb-4">
+                <i class="fas fa-envelope me-2"></i>
+                Se ha enviado un correo de confirmación con este comprobante a su email.
+            </div>
+            <!-- FB PASO 14 - CU-04 FINAL -->
+
+            <!-- FB PASO 15 - CU-04 INICIO -->
+            <!-- CU-04 paso 15: dos salidas -->
+            <div class="d-flex flex-column flex-sm-row gap-2 no-imprimir">
+                <a href="/paciente/dashboard" class="btn btn-primary flex-fill">
+                    <i class="fas fa-house me-1"></i> Volver al Portal
+                </a>
+                <a href="/paciente/mis-citas" class="btn btn-outline-primary flex-fill">
+                    <i class="fas fa-calendar-check me-1"></i> Ver Mis Citas
+                </a>
+                <button type="button" class="btn btn-outline-secondary" onclick="window.print()"
+                        title="Imprimir comprobante">
+                    <i class="fas fa-print"></i>
+                </button>
+            </div>
+            <!-- FB PASO 15 - CU-04 FINAL -->
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sucursales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="d-flex">
+
+    <div th:replace="~{fragments/menu :: menu-admin}"></div>
+
+    <main class="flex-grow-1 p-4">
+        <!-- FB PASOS 1-3 - CU-14 INICIO -->
+        <div th:replace="~{fragments/catalogo :: encabezado('Sucursales', '/admin/sucursales')}"></div>
+        <!-- FB PASOS 1-3 - CU-14 FINAL -->
+        <!-- FB PASO 8 - CU-14 INICIO -->
+        <th:block th:replace="~{fragments/catalogo :: alertas}"></th:block>
+        <!-- FB PASO 8 - CU-14 FINAL -->
+        <!-- FB PASO 2 - CU-14 INICIO -->
+        <div th:replace="~{fragments/catalogo :: filtro('/admin/sucursales')}"></div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle bg-white">
+                <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${registros.content}">
+                    <td th:text="${r.id}">1</td>
+                    <td th:text="${r.nombre}">—</td>
+                    <td th:text="${r.telefono}">—</td>
+                    <td th:text="${r.direccion}">—</td>
+                    <td><th:block th:replace="~{fragments/catalogo :: estado(${r.activo})}"></th:block></td>
+                    <td class="text-center">
+                        <div th:replace="~{fragments/catalogo :: acciones('/admin/sucursales', ${r.id}, ${r.nombre}, ${r.activo})}"></div>
+                    </td>
+                </tr>
+                <!-- FA01 - CU-14 INICIO -->
+                <th:block th:if="${registros.content.isEmpty()}"><tr th:replace="~{fragments/catalogo :: sinResultados(6)}"></tr></th:block>
+                <!-- FA01 - CU-14 FINAL -->
+                </tbody>
+            </table>
+        </div>
+
+        <div th:replace="~{fragments/catalogo :: paginacion('/admin/sucursales')}"></div>
+        <!-- FB PASO 2 - CU-14 FINAL -->
+    </main>
+</div>
+
+<!-- FA03 - CU-14 INICIO -->
+<th:block th:replace="~{fragments/catalogo :: modalEliminar}"></th:block>
+<!-- FA03 - CU-14 FINAL -->
+</body>
+</html>

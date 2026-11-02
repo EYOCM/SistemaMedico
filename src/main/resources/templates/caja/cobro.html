@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cobro en caja</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato th { font-weight: 400; color: var(--muted-text); width: 38%; }
+        .total { font-size: 2.2rem; font-weight: 700; }
+        .metodo-btn { min-width: 9rem; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/caja}"><i class="fas fa-cash-register me-2"></i>Caja</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 820px;">
+
+    <!-- FB PASO 6 / FA04 - CU-06 INICIO -->
+    <!-- Error del cobro (guardas 5–8 del servicio): vuelve aquí con lo escrito -->
+    <div th:if="${error}" class="alert alert-danger">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+    </div>
+    <!-- FB PASO 6 / FA04 - CU-06 FINAL -->
+
+    <!-- FB PASOS 2-3 - CU-06 INICIO -->
+    <!-- Paso 2: detalle de la cita y monto a cobrar -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="mb-0" th:text="${cita.nombrePaciente}">Luis Ramírez</h5>
+                    <small class="text-muted" th:text="${cita.numeroCita}">CITA-CAJA-01</small>
+                </div>
+                <div class="text-end">
+                    <div class="small text-muted">Monto total</div>
+                    <div class="total"
+                         th:text="${cita.monto != null} ? 'Q' + ${#numbers.formatDecimal(cita.monto, 1, 'COMMA', 2, 'POINT')} : 'Sin precio'">Q150.00</div>
+                </div>
+            </div>
+            <table class="table table-sm table-borderless dato mt-3 mb-0">
+                <tr><th>Especialidad</th><td th:text="${cita.nombreEspecialidad}">Medicina General</td></tr>
+                <tr><th>Médico</th><td th:text="${cita.nombreMedico}">Dr. Carlos Méndez</td></tr>
+                <tr><th>Fecha y hora</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy HH:mm')}">12/10/2026 14:00</td></tr>
+            </table>
+        </div>
+    </div>
+    <!-- FB PASOS 2-3 - CU-06 FINAL -->
+
+    <!-- FB PASOS 4-8 - CU-06 INICIO -->
+    <!-- Pasos 4–6 y FA01: método de pago -->
+    <form th:action="@{/caja/citas/{id}/cobro(id=${cita.id})}" th:object="${cobro}" method="post" id="formCobro">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="mb-3">Método de pago</h6>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <th:block th:each="m : ${metodos}">
+                        <input type="radio" class="btn-check" th:field="*{metodo}" th:value="${m.name()}" required>
+                        <label class="btn btn-outline-primary metodo-btn" th:for="${#ids.prev('metodo')}"
+                               th:text="${m.descripcion}">Efectivo</label>
+                    </th:block>
+                </div>
+
+                <!-- FB PASOS 5-7 - CU-06 INICIO -->
+                <!-- Efectivo: monto recibido y cambio -->
+                <div id="seccionEfectivo" class="d-none">
+                    <label for="montoRecibido" class="form-label">Monto Recibido (Q)</label>
+                    <input type="number" step="0.01" min="0" class="form-control form-control-lg"
+                           th:field="*{montoRecibido}" id="montoRecibido" placeholder="0.00">
+                    <div id="vistaCambio" class="form-text fs-6 mt-2"></div>
+                </div>
+                <!-- FB PASOS 5-7 - CU-06 FINAL -->
+
+                <!-- FA01 - CU-06 INICIO -->
+                <!-- Tarjeta (FA01): últimos 4 dígitos -->
+                <div id="seccionTarjeta" class="d-none">
+                    <label for="ultimosDigitos" class="form-label">Últimos 4 dígitos de la tarjeta</label>
+                    <input type="text" inputmode="numeric" maxlength="4" pattern="\d{4}"
+                           class="form-control form-control-lg" style="max-width: 10rem;"
+                           th:field="*{ultimosDigitos}" id="ultimosDigitos" placeholder="1234"
+                           title="Ingrese exactamente 4 dígitos">
+                    <div class="form-text">Solo como referencia. La tarjeta se procesa en la terminal.</div>
+                </div>
+                <!-- FA01 - CU-06 FINAL -->
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success btn-lg" id="btnRegistrar">
+                <i class="fas fa-check me-1"></i>Registrar Pago
+            </button>
+            <a th:href="@{/caja}" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+        </div>
+    </form>
+    <!-- FB PASOS 4-8 - CU-06 FINAL -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FB PASOS 4-7 - CU-06 INICIO -->
+<script th:inline="javascript">
+    (function () {
+        const total = /*[[${cita.monto}]]*/ 0;
+        const efectivo = document.getElementById('seccionEfectivo');
+        const tarjeta = document.getElementById('seccionTarjeta');
+        const recibido = document.getElementById('montoRecibido');
+        const digitos = document.getElementById('ultimosDigitos');
+        const vista = document.getElementById('vistaCambio');
+        const form = document.getElementById('formCobro');
+        const boton = document.getElementById('btnRegistrar');
+
+        // Muestra la sección del método elegido y desactiva la otra (no se envía)
+        function mostrarSeccion() {
+            const elegido = document.querySelector('input[name="metodo"]:checked');
+            const esEfectivo = elegido && elegido.value === 'EFECTIVO';
+            const esTarjeta = elegido && !esEfectivo;
+            efectivo.classList.toggle('d-none', !esEfectivo);
+            tarjeta.classList.toggle('d-none', !esTarjeta);
+            recibido.disabled = !esEfectivo;  recibido.required = esEfectivo;
+            digitos.disabled = !esTarjeta;    digitos.required = esTarjeta;
+            calcularCambio();
+        }
+
+        // Vista previa del cambio (el cálculo que vale es el del servidor)
+        function calcularCambio() {
+            const valor = parseFloat(recibido.value);
+            if (isNaN(valor) || total == null) { vista.textContent = ''; vista.className = 'form-text fs-6 mt-2'; return; }
+            if (valor < total) {
+                vista.textContent = 'El monto recibido es menor al monto a cobrar (Q' + Number(total).toFixed(2) + ').';
+                vista.className = 'form-text fs-6 mt-2 text-danger';
+            } else {
+                vista.textContent = 'Monto recibido: Q' + valor.toFixed(2) + '. Cambio a devolver: Q' + (valor - total).toFixed(2) + '.';
+                vista.className = 'form-text fs-6 mt-2 text-success fw-semibold';
+            }
+        }
+
+        // Solo números en los 4 dígitos
+        digitos.addEventListener('input', () => { digitos.value = digitos.value.replace(/\D/g, '').slice(0, 4); });
+
+        document.querySelectorAll('input[name="metodo"]').forEach(r => r.addEventListener('change', mostrarSeccion));
+        recibido.addEventListener('input', calcularCambio);
+
+        // Evita el doble clic mientras el servidor responde
+        form.addEventListener('submit', () => {
+            boton.disabled = true;
+            boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando pago...';
+        });
+
+        mostrarSeccion();
+    })();
+</script>
+<!-- FB PASOS 4-7 - CU-06 FINAL -->
+</body>
+</html>

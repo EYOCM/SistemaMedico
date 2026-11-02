@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo movimiento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<nav th:replace="~{inventario/fragmentos :: barra}"></nav>
+
+<div class="container mb-5" style="max-width: 1100px;">
+    <th:block th:replace="~{inventario/fragmentos :: alertas}"></th:block>
+
+    <!-- FB PASO 4 - CU-15 INICIO -->
+    <h2 class="mb-1">Nuevo movimiento de inventario</h2>
+    <p class="text-muted">Los campos con <span class="text-danger">*</span> son obligatorios. El stock se actualiza al registrar.</p>
+    <!-- FB PASO 4 - CU-15 FINAL -->
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <!-- FB PASOS 4-6 - CU-15 INICIO -->
+            <form method="post" th:action="@{/inventario/movimientos/nuevo}" th:object="${movimiento}" id="formMovimiento" class="card card-body shadow-sm" novalidate>
+
+                <!-- FB PASO 5 - CU-15 INICIO -->
+                <div class="mb-3">
+                    <label class="form-label" for="tipo">Tipo de movimiento <span class="text-danger">*</span></label>
+                    <select th:field="*{tipo}" class="form-select" th:classappend="${errores['tipo'] != null} ? 'is-invalid'">
+                        <option value="">Seleccione…</option>
+                        <option th:each="t : ${tiposManuales}" th:value="${t}" th:text="${t.descripcion}"
+                                th:attr="data-entrada=${t.entrada},data-referencia=${t.etiquetaReferencia},data-motivo=${t.etiquetaMotivo},data-obligatorio=${t.motivoObligatorio}">Compra</option>
+                    </select>
+                    <div class="invalid-feedback" th:text="${errores['tipo']}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="medicamentoId">Medicamento <span class="text-danger">*</span></label>
+                    <select th:field="*{medicamentoId}" class="form-select" th:classappend="${errores['medicamentoId'] != null} ? 'is-invalid'">
+                        <option value="">Seleccione…</option>
+                        <option th:each="med : ${medicamentos}" th:value="${med.id}"
+                                th:text="${med.nombre} + ' (' + ${med.unidad} + ')'">Amoxicilina</option>
+                    </select>
+                    <div class="invalid-feedback" th:text="${errores['medicamentoId']}"></div>
+                </div>
+
+                <div class="mb-3" th:if="${alcance.administrador}">
+                    <label class="form-label" for="sucursalId">Sede <span class="text-danger">*</span></label>
+                    <select th:field="*{sucursalId}" class="form-select" th:classappend="${errores['sucursalId'] != null} ? 'is-invalid'">
+                        <option value="">Seleccione…</option>
+                        <option th:each="s : ${sucursales}" th:value="${s.id}" th:text="${s.nombre}">Sede</option>
+                    </select>
+                    <div class="invalid-feedback" th:text="${errores['sucursalId']}"></div>
+                </div>
+                <div class="mb-3" th:unless="${alcance.administrador}">
+                    <label class="form-label">Sede</label>
+                    <input type="text" class="form-control" th:value="${alcance.sucursalNombre}" disabled>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="cantidad">Cantidad <span class="text-danger">*</span></label>
+                        <input type="number" th:field="*{cantidad}" class="form-control" min="1" step="1"
+                               th:classappend="${errores['cantidad'] != null} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:text="${errores['cantidad']}"></div>
+                    </div>
+                    <div class="col-sm-6" id="grupoCosto">
+                        <label class="form-label" for="costoUnitario">Costo unitario (Q) <span class="text-danger" id="costoObligatorio">*</span></label>
+                        <input type="number" th:field="*{costoUnitario}" class="form-control" min="0.01" step="0.01"
+                               th:classappend="${errores['costoUnitario'] != null} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:text="${errores['costoUnitario']}"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="referencia" id="etiquetaReferencia">Referencia</label>
+                    <input type="text" th:field="*{referencia}" class="form-control" maxlength="50"
+                           th:classappend="${errores['referencia'] != null} ? 'is-invalid'" placeholder="Ej. FAC-2026-0101">
+                    <div class="invalid-feedback" th:text="${errores['referencia']}"></div>
+                </div>
+
+                <div class="mb-3" id="grupoMotivo">
+                    <label class="form-label" for="motivo"><span id="etiquetaMotivo">Motivo</span> <span class="text-danger" id="motivoObligatorio">*</span></label>
+                    <textarea th:field="*{motivo}" class="form-control" rows="3" maxlength="500"
+                              th:classappend="${errores['motivo'] != null} ? 'is-invalid'"></textarea>
+                    <div class="d-flex justify-content-between">
+                        <div class="invalid-feedback d-block" th:text="${errores['motivo']}"></div>
+                        <small class="text-muted text-nowrap"><span id="contadorMotivo">0</span>/500</small>
+                    </div>
+                </div>
+                <!-- FB PASO 5 - CU-15 FINAL -->
+
+                <div class="d-flex gap-2">
+                    <!-- FB PASO 6 - CU-15 INICIO -->
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk me-1"></i>Registrar movimiento</button>
+                    <!-- FB PASO 6 - CU-15 FINAL -->
+                    <!-- FA04 - CU-15 INICIO -->
+                    <a th:href="@{/inventario/movimientos}" class="btn btn-outline-secondary">Cancelar</a>
+                    <!-- FA04 - CU-15 FINAL -->
+                </div>
+            </form>
+            <!-- FB PASOS 4-6 - CU-15 FINAL -->
+        </div>
+
+        <!-- FB PASO 4 / FA05 - CU-15 INICIO -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm sticky-top" style="top: 1rem;" id="panelStock"
+                 th:attr="data-url=@{/inventario/stock},data-sede=${alcance.sucursalId}">
+                <div class="card-header bg-white"><strong><i class="fas fa-chart-simple me-2"></i>Stock en tiempo real</strong></div>
+                <div class="card-body">
+                    <p class="text-muted mb-0" id="stockVacio">Elija el medicamento<span th:if="${alcance.administrador}"> y la sede</span> para ver su stock.</p>
+                    <div id="stockDatos" class="d-none">
+                        <h6 id="stockNombre" class="mb-3"></h6>
+                        <table class="table table-sm mb-3">
+                            <tr><td class="text-muted">Stock actual</td><td class="text-end fw-semibold" id="stockActual">0</td></tr>
+                            <tr><td class="text-muted">Stock mínimo</td><td class="text-end" id="stockMinimo">0</td></tr>
+                            <tr><td class="text-muted">Movimiento</td><td class="text-end fw-semibold" id="stockMovimiento">—</td></tr>
+                            <tr class="table-light"><td><strong>Stock después</strong></td><td class="text-end"><strong id="stockProyectado">—</strong></td></tr>
+                        </table>
+                        <div id="avisoSinRegistro" class="alert alert-info small d-none mb-2">
+                            Este medicamento no tiene inventario en la sede; una entrada lo creará.
+                        </div>
+                        <!-- FA02 - CU-15 INICIO -->
+                        <div id="avisoInsuficiente" class="alert alert-danger small d-none mb-2"></div>
+                        <!-- FA02 - CU-15 FINAL -->
+                        <!-- FA05 - CU-15 INICIO -->
+                        <div id="avisoMinimo" class="alert alert-warning small d-none mb-0"></div>
+                        <!-- FA05 - CU-15 FINAL -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- FB PASO 4 / FA05 - CU-15 FINAL -->
+    </div>
+</div>
+
+<!-- FB PASOS 4-5 - CU-15 INICIO -->
+<script>
+    (function () {
+        const tipo = document.getElementById('tipo');
+        const medicamento = document.getElementById('medicamentoId');
+        const sede = document.getElementById('sucursalId');
+        const cantidad = document.getElementById('cantidad');
+        const motivo = document.getElementById('motivo');
+        const panel = document.getElementById('panelStock');
+        const $ = function (id) { return document.getElementById(id); };
+        let stock = null;
+
+        function tipoElegido() {
+            return tipo.selectedIndex > 0 ? tipo.options[tipo.selectedIndex].dataset : null;
+        }
+
+        // FB PASO 5 - CU-15 INICIO
+        function actualizarCampos() {
+            const t = tipoElegido();
+            $('etiquetaReferencia').textContent = t ? t.referencia : 'Referencia';
+            $('grupoCosto').classList.toggle('d-none', !!t && t.entrada !== 'true');
+            $('costoObligatorio').classList.toggle('d-none', !t || tipo.value !== 'COMPRA');
+            $('grupoMotivo').classList.toggle('d-none', !!t && !t.motivo);
+            $('etiquetaMotivo').textContent = t && t.motivo ? t.motivo : 'Motivo';
+            $('motivoObligatorio').classList.toggle('d-none', !t || t.obligatorio !== 'true');
+            calcular();
+        }
+        // FB PASO 5 - CU-15 FINAL
+
+        // FB PASO 4 / FA05 - CU-15 INICIO
+        function calcular() {
+            if (!stock) return;
+            const t = tipoElegido();
+            const n = parseInt(cantidad.value, 10);
+            $('stockNombre').textContent = stock.medicamento;
+            $('stockActual').textContent = stock.stockActual;
+            $('stockMinimo').textContent = stock.stockMinimo;
+            $('avisoSinRegistro').classList.toggle('d-none', stock.registrado);
+            $('avisoInsuficiente').classList.add('d-none');
+            $('avisoMinimo').classList.add('d-none');
+            if (!t || !(n > 0)) {
+                $('stockMovimiento').textContent = '—';
+                $('stockProyectado').textContent = '—';
+                return;
+            }
+            const entrada = t.entrada === 'true';
+            const despues = entrada ? stock.stockActual + n : stock.stockActual - n;
+            $('stockMovimiento').textContent = (entrada ? '+' : '-') + n;
+            $('stockMovimiento').className = 'text-end fw-semibold ' + (entrada ? 'text-success' : 'text-danger');
+            $('stockProyectado').textContent = despues;
+            if (despues < 0) {
+                // FA02 - CU-15 INICIO
+                $('avisoInsuficiente').textContent = 'Stock insuficiente. Stock actual: ' + stock.stockActual
+                    + '. No se puede registrar una salida de ' + n + ' unidades.';
+                $('avisoInsuficiente').classList.remove('d-none');
+                // FA02 - CU-15 FINAL
+            } else if (despues <= stock.stockMinimo) {
+                // FA05 - CU-15 INICIO
+                $('avisoMinimo').textContent = stock.medicamento + ': Stock bajo — disponible: ' + despues
+                    + ' (mínimo: ' + stock.stockMinimo + ')';
+                $('avisoMinimo').classList.remove('d-none');
+                // FA05 - CU-15 FINAL
+            }
+        }
+        // FB PASO 4 / FA05 - CU-15 FINAL
+
+        // FB PASO 4 - CU-15 INICIO
+        function consultarStock() {
+            const sedeId = sede ? sede.value : panel.dataset.sede;
+            stock = null;
+            $('stockDatos').classList.add('d-none');
+            $('stockVacio').classList.remove('d-none');
+            if (!medicamento.value || !sedeId) return;
+            fetch(panel.dataset.url + '?medicamentoId=' + medicamento.value + '&sucursalId=' + sedeId)
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (datos) {
+                    if (!datos) return;
+                    stock = datos;
+                    $('stockVacio').classList.add('d-none');
+                    $('stockDatos').classList.remove('d-none');
+                    calcular();
+                });
+        }
+        // FB PASO 4 - CU-15 FINAL
+
+        function contar() {
+            $('contadorMotivo').textContent = motivo.value.length;
+        }
+
+        tipo.addEventListener('change', actualizarCampos);
+        medicamento.addEventListener('change', consultarStock);
+        if (sede) sede.addEventListener('change', consultarStock);
+        cantidad.addEventListener('input', calcular);
+        motivo.addEventListener('input', contar);
+        actualizarCampos();
+        consultarStock();
+        contar();
+    })();
+</script>
+<!-- FB PASOS 4-5 - CU-15 FINAL -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 package progra2.SistemaMedico.security;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,12 +15,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerRequestFilter extiende de esta clase abstracta para la personalizacion de fitlros
 
-    private final GeneradorDeJwt jwtUtils
-            ;
+    private final GeneradorDeJwt jwtUtils;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -28,8 +29,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerReq
 
         String requestURI = request.getRequestURI();
 
-        // 1. IGNORAR RUTAS DE VISTAS (Thymeleaf) y recursos estáticos.
-        // Esto es CRUCIAL: permite que el login y los dashboards funcionen con Session, no con JWT.
         if (requestURI.equals("/") ||
                 requestURI.startsWith("/login") ||
                 requestURI.startsWith("/registro") ||
@@ -39,7 +38,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerReq
                 requestURI.startsWith("/citas/") ||
                 requestURI.startsWith("/pago/") ||
                 requestURI.startsWith("/css/") ||
-                requestURI.startsWith("/js/")) {
+                requestURI.startsWith("/js/") ||
+                requestURI.startsWith("/recepcion") ||
+                requestURI.startsWith("/caja") ||
+                requestURI.startsWith("/enfermeria") ||
+                requestURI.startsWith("/medico") ||
+                requestURI.startsWith("/laboratorio") ||
+                requestURI.startsWith("/farmacia")
+        )
+        {
+
 
             // Continuar la cadena de filtros SIN aplicar lógica JWT
             filterChain.doFilter(request, response);
@@ -82,4 +90,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerReq
         }
         return null;
     }
-}
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- FB PASO 1 - CU-15 INICIO -->
+<nav th:fragment="barra" class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/inventario}"><i class="fas fa-boxes-stacked me-2"></i>Inventario</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#barraInventario">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="barraInventario">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/inventario}">Existencias</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/inventario/movimientos}">Bitácora</a></li>
+                <!-- FB PASO 3 - CU-15 INICIO -->
+                <li class="nav-item"><a class="nav-link" th:href="@{/inventario/movimientos/nuevo}">Nuevo movimiento</a></li>
+                <!-- FB PASO 3 - CU-15 FINAL -->
+                <li class="nav-item" th:if="${alcance.administrador}"><a class="nav-link" th:href="@{/admin/dashboard}">Panel Admin</a></li>
+                <li class="nav-item" th:unless="${alcance.administrador}"><a class="nav-link" th:href="@{/farmacia}">Despacho</a></li>
+            </ul>
+            <span class="badge bg-secondary me-3"
+                  th:text="${alcance.administrador} ? 'Todas las sedes' : ${alcance.sucursalNombre}">Sede</span>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+<!-- FB PASO 1 - CU-15 FINAL -->
+
+<th:block th:fragment="alertas">
+    <!-- FB PASO 9 - CU-15 INICIO -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FB PASO 9 - CU-15 FINAL -->
+    <!-- FA05 - CU-15 INICIO -->
+    <div th:if="${alerta}" class="alert alert-warning alert-dismissible fade show">
+        <i class="fas fa-triangle-exclamation me-2"></i><span th:text="${alerta}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FA05 - CU-15 FINAL -->
+    <!-- FA02 / FA03 - CU-15 INICIO -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- FA02 / FA03 - CU-15 FINAL -->
+</th:block>
+
+<th:block th:fragment="tipo(m)">
+    <span class="badge" th:classappend="${m.entrada} ? 'bg-success' : 'bg-danger'">
+        <i class="fas me-1" th:classappend="${m.entrada} ? 'fa-arrow-down' : 'fa-arrow-up'"></i><span th:text="${m.tipoDescripcion}">Compra</span>
+    </span>
+</th:block>
+
+<th:block th:fragment="cantidad(m)">
+    <span class="fw-semibold" th:classappend="${m.entrada} ? 'text-success' : 'text-danger'"
+          th:text="(${m.entrada} ? '+' : '-') + ${m.cantidad}">+10</span>
+</th:block>
+
+<!-- FB PASO 2 - CU-15 INICIO -->
+<form th:fragment="estado(m, volver)" th:if="${m.manual}" method="post"
+      th:action="@{/inventario/movimientos/{id}/estado(id=${m.id})}" class="d-inline">
+    <input type="hidden" name="volver" th:value="${volver}">
+    <button type="submit" class="btn btn-sm" th:classappend="${m.activo} ? 'btn-outline-danger' : 'btn-outline-success'"
+            th:text="${m.activo} ? 'Desactivar' : 'Activar'">Desactivar</button>
+</form>
+<!-- FB PASO 2 - CU-15 FINAL -->
+
+</body>
+</html>

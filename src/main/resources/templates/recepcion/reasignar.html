@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reasignar Médico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>.dato th { font-weight: 400; color: var(--muted-text); width: 38%; }</style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/recepcion}"><i class="fas fa-hospital me-2"></i>Recepción</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<!-- FA07 - CU-05 INICIO -->
+<div class="container mb-5" style="max-width: 720px;" th:with="c=${reasignacion.cita}">
+
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="fas fa-user-doctor me-2"></i>Reasignar Médico</h5>
+
+            <!-- Resumen de la cita -->
+            <table class="table table-sm table-borderless dato mb-3">
+                <tr><th>Paciente</th><td th:text="${c.nombrePaciente}">Ana Gómez</td></tr>
+                <tr><th>No. de cita</th><td th:text="${c.numeroCita}">CITA-PRUEBA-01</td></tr>
+                <tr><th>Fecha y hora</th><td th:text="${#temporals.format(c.fechaHora, 'dd/MM/yyyy HH:mm')}">18/10/2026 10:00</td></tr>
+                <tr><th>Especialidad</th><td th:text="${c.nombreEspecialidad}">Medicina General</td></tr>
+                <tr><th>Sede</th><td th:text="${c.nombreSucursal}">Sede Central - Zona 1</td></tr>
+                <tr><th>Médico actual</th><td class="fw-semibold" th:text="${c.nombreMedico}">Carlos Méndez Ruiz</td></tr>
+            </table>
+
+            <div th:if="${#lists.isEmpty(reasignacion.medicos)}" class="alert alert-warning">
+                <i class="fas fa-circle-info me-2"></i>
+                No hay otros médicos de esta sede y especialidad libres en ese horario.
+            </div>
+
+            <form th:action="@{/recepcion/citas/{id}/reasignar(id=${c.id})}" method="post">
+                <input type="hidden" name="tipo" th:value="${tipo}">
+                <input type="hidden" name="valor" th:value="${valor}">
+
+                <div class="mb-3" th:unless="${#lists.isEmpty(reasignacion.medicos)}">
+                    <label class="form-label">Nuevo médico</label>
+                    <div class="form-check" th:each="m, i : ${reasignacion.medicos}">
+                        <input class="form-check-input" type="radio" name="medicoId"
+                               th:id="'medico' + ${i.index}" th:value="${m.id}">
+                        <label class="form-check-label" th:for="'medico' + ${i.index}" th:text="${m.nombre}">Dra. Estrada</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="nota" class="form-label">Nota (opcional)</label>
+                    <textarea id="nota" name="nota" class="form-control" rows="2" maxlength="300"
+                              placeholder="Motivo de la reasignación" th:text="${notaPrevia}"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a th:href="@{/recepcion/buscar(tipo=${tipo}, valor=${valor})}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary" th:disabled="${#lists.isEmpty(reasignacion.medicos)}">
+                        <i class="fas fa-check me-1"></i>Confirmar Reasignación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- FA07 - CU-05 FINAL -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

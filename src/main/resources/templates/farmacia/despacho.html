@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Despacho de medicamentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato { color: var(--muted-text); }
+        .linea { border-left: 6px solid #198754; }
+        .linea.sin-stock { border-left-color: #dc3545; }
+        .linea.stock-bajo { border-left-color: #ffc107; }
+        .total { font-size: 1.8rem; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/farmacia}"><i class="fas fa-prescription-bottle-medical me-2"></i>Farmacia</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 980px;" th:with="r=${prep.receta}">
+
+    <!-- FA01 / FA02 - CU-11 INICIO -->
+    <div th:if="${error}" class="alert alert-danger">
+        <i class="fas fa-circle-exclamation me-2"></i><span th:text="${error}"></span>
+    </div>
+    <!-- FA01 / FA02 - CU-11 FINAL -->
+
+    <!-- FB PASO 4 - CU-11 INICIO -->
+    <!-- Paso 4: receta -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h5 class="mb-0" th:text="${r.nombrePaciente}">Ana Gómez</h5>
+                <div class="small dato">
+                    <span th:text="${r.numeroReceta}">REC-…</span> · Consulta <span th:text="${r.numeroCita}">CITA-…</span> ·
+                    Dr(a). <span th:text="${r.nombreMedico}">Méndez</span>
+                </div>
+                <div class="small dato">Inventario de: <strong th:text="${prep.nombreSucursal}">Sede Central</strong></div>
+            </div>
+            <span class="badge bg-success" th:text="'Vigente · emitida hace ' + ${r.diasTranscurridos} + ' día(s)'">Vigente</span>
+        </div>
+    </div>
+    <!-- FB PASO 4 - CU-11 FINAL -->
+
+    <form th:action="@{/farmacia/recetas/{id}/despacho(id=${r.id})}" th:object="${despacho}" method="post" id="formDespacho" novalidate>
+
+        <!-- FB PASOS 4-6 - CU-11 INICIO -->
+        <!-- Pasos 4–6, FA01, FA02: un bloque por medicamento -->
+        <div th:each="l, i : *{lineas}" class="card shadow-sm mb-3 linea"
+             th:classappend="${l.stockDisponible == null or l.stockDisponible == 0} ? 'sin-stock' : (${l.stockDisponible <= l.stockMinimo} ? 'stock-bajo' : '')">
+            <div class="card-body">
+                <input type="hidden" th:field="*{lineas[__${i.index}__].recetaDetalleId}">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <h6 class="mb-0">
+                            <span th:text="${l.nombreMedicamento}">Amoxicilina 500 mg</span>
+                            <span class="small dato" th:text="'(' + ${l.unidad} + ')'">(cápsula)</span>
+                        </h6>
+                        <div class="small">
+                            <span th:text="${l.dosis}">1 cápsula</span> · <span th:text="${l.frecuencia}">cada 8 h</span> ·
+                            <span th:text="${l.duracion}">7 días</span>
+                            <span th:if="${l.indicaciones != null}" class="dato" th:text="' · ' + ${l.indicaciones}"></span>
+                        </div>
+                    </div>
+                    <div class="text-end small">
+                        <div>Precio: <strong th:text="'Q' + ${#numbers.formatDecimal(l.precioUnitario, 1, 'COMMA', 2, 'POINT')}">Q2.50</strong></div>
+                        <!-- FA01 - CU-11 INICIO -->
+                        <!-- FA01 -->
+                        <div th:if="${l.stockDisponible == null}" class="text-danger fw-semibold">Sin inventario registrado</div>
+                        <div th:if="${l.stockDisponible != null and l.stockDisponible <= l.stockMinimo}" class="text-warning-emphasis fw-semibold">
+                            <span th:text="${l.nombreMedicamento}"></span>: Stock bajo — disponible: <span th:text="${l.stockDisponible}">3</span>
+                            (mínimo: <span th:text="${l.stockMinimo}">10</span>).
+                        </div>
+                        <!-- FA01 - CU-11 FINAL -->
+                        <div th:if="${l.stockDisponible != null and l.stockDisponible > l.stockMinimo}" class="dato">
+                            Disponible: <span th:text="${l.stockDisponible}">120</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-2 mt-2 align-items-end">
+                    <!-- FB PASO 6 - CU-11 INICIO -->
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Cantidad a despachar</label>
+                        <input type="number" min="0" max="1000" class="form-control cantidad"
+                               th:field="*{lineas[__${i.index}__].cantidad}" th:attr="data-precio=${l.precioUnitario}">
+                        <div class="form-text">0 = no se despacha</div>
+                    </div>
+                    <!-- FB PASO 6 - CU-11 FINAL -->
+                    <!-- FA02 - CU-11 INICIO -->
+                    <div class="col-md-3">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input sustituir" th:id="'sustituir-' + ${i.index}"
+                                   th:field="*{lineas[__${i.index}__].sustituir}">
+                            <label class="form-check-label" th:for="'sustituir-' + ${i.index}">Sustituir medicamento</label>
+                        </div>
+                    </div>
+                    <!-- FA02 -->
+                    <div class="col-md-6 bloque-sustitucion">
+                        <label class="form-label small mb-1">Medicamento alternativo</label>
+                        <select class="form-select alternativo" th:field="*{lineas[__${i.index}__].medicamentoSustitutoId}">
+                            <option value="">— Seleccione —</option>
+                            <option th:each="m : ${prep.alternativas}" th:value="${m.id}" th:attr="data-precio=${m.precio}"
+                                    th:text="${m.nombre} + ' (Q' + ${#numbers.formatDecimal(m.precio, 1, 'COMMA', 2, 'POINT')} + ')'">Paracetamol</option>
+                        </select>
+                    </div>
+                    <div class="col-12 bloque-sustitucion">
+                        <label class="form-label small mb-1">Razón de sustitución *</label>
+                        <input type="text" maxlength="500" class="form-control"
+                               th:field="*{lineas[__${i.index}__].razonSustitucion}" placeholder="Sin existencia del recetado; mismo principio activo">
+                    </div>
+                    <!-- FA02 - CU-11 FINAL -->
+                </div>
+            </div>
+        </div>
+        <!-- FB PASOS 4-6 - CU-11 FINAL -->
+
+        <!-- FB PASOS 7-9 - CU-11 INICIO -->
+        <!-- Paso 7 -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <div class="small dato">El cobro físico se realiza fuera del sistema.</div>
+                    <div>Total del Despacho: <span class="total" id="total">Q0.00</span></div>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg" id="btnConfirmar">
+                    <i class="fas fa-check me-1"></i>Confirmar Despacho
+                </button>
+            </div>
+        </div>
+        <!-- FB PASOS 7-9 - CU-11 FINAL -->
+    </form>
+
+    <div class="d-flex gap-2">
+        <a th:href="@{/farmacia}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Cancelar</a>
+        <!-- FA03 - CU-11 INICIO -->
+        <!-- FA03 -->
+        <form method="post" th:action="@{/farmacia/recetas/{id}/no-adquirido(id=${r.id})}" class="m-0" id="formNoAdquirido">
+            <button type="submit" class="btn btn-outline-danger"><i class="fas fa-ban me-1"></i>Paciente no desea adquirirlos</button>
+        </form>
+        <!-- FA03 - CU-11 FINAL -->
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        const lineas = document.querySelectorAll('.linea');
+
+        // FB PASO 7 - CU-11 INICIO
+        // Paso 7: total en vivo (el que vale es el del servidor, con los precios del catálogo)
+        function recalcular() {
+            let total = 0;
+            lineas.forEach(l => {
+                const cant = parseInt(l.querySelector('.cantidad').value) || 0;
+                let precio = parseFloat(l.querySelector('.cantidad').dataset.precio);
+                if (l.querySelector('.sustituir').checked) {
+                    const opt = l.querySelector('.alternativo').selectedOptions[0];
+                    if (opt && opt.dataset.precio) precio = parseFloat(opt.dataset.precio);
+                }
+                total += cant * precio;
+            });
+            document.getElementById('total').textContent = 'Q' + total.toFixed(2);
+        }
+        // FB PASO 7 - CU-11 FINAL
+
+        // FA02 - CU-11 INICIO
+        // FA02: mostrar los campos de sustitución solo si se marca la casilla
+        lineas.forEach(l => {
+            const chk = l.querySelector('.sustituir');
+            const mostrar = () => l.querySelectorAll('.bloque-sustitucion').forEach(b => b.classList.toggle('d-none', !chk.checked));
+            chk.addEventListener('change', () => { mostrar(); recalcular(); });
+            l.querySelector('.cantidad').addEventListener('input', recalcular);
+            l.querySelector('.alternativo').addEventListener('change', recalcular);
+            mostrar();
+        });
+        // FA02 - CU-11 FINAL
+        recalcular();
+
+        // FB PASO 9 - CU-11 INICIO
+        document.getElementById('formDespacho').addEventListener('submit', () => {
+            const b = document.getElementById('btnConfirmar');
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
+        });
+        // FB PASO 9 - CU-11 FINAL
+        // FA03 - CU-11 INICIO
+        document.getElementById('formNoAdquirido').addEventListener('submit', e => {
+            if (!window.confirm('¿Registrar que el paciente no adquirió los medicamentos? La receta quedará cerrada.')) e.preventDefault();
+        });
+        // FA03 - CU-11 FINAL
+    })();
+</script>
+</body>
+</html>

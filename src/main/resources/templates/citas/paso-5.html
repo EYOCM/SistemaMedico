@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <title>Agendar Cita - Paso 5</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
-<body class="bg-light">
+<body>
 <div class="container mt-5" style="max-width: 600px;">
     <h3 class="mb-3 text-center">Agendar Cita Médica</h3>
     <div class="progress mb-4" style="height: 10px;">
@@ -16,6 +17,7 @@
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
     <form th:action="@{/citas/paso/5}" method="post" class="card p-4 shadow-sm">
+        <!-- FB PASO 6 - CU-03 INICIO -->
         <div class="alert alert-info">
             <h5 class="alert-heading">Resumen de su Cita</h5>
             <hr>
@@ -24,16 +26,23 @@
             <p class="mb-1"><strong>Médico:</strong> <span th:text="${medicoNombre}"></span></p>
             <p class="mb-0"><strong>Fecha y Hora:</strong> <span th:text="${#temporals.format(fechaHora, 'dd/MM/yyyy HH:mm')}"></span></p>
         </div>
+        <!-- FB PASO 6 - CU-03 FINAL -->
 
+        <!-- FB PASO 7 - CU-03 INICIO -->
         <div class="mb-3">
             <label for="motivoConsulta" class="form-label fw-bold">Motivo de la consulta <span class="text-danger">*</span></label>
-            <textarea class="form-control" id="motivoConsulta" name="motivoConsulta" rows="4" minlength="10" maxlength="2000" required placeholder="Describa brevemente el motivo de su visita (mínimo 10 caracteres)..."></textarea>
+            <textarea class="form-control" id="motivoConsulta" name="motivoConsulta" rows="4" minlength="10" maxlength="2000" required placeholder="Describa brevemente el motivo de su visita (mínimo 10 caracteres)..." th:text="${motivoPrevio}"></textarea>
             <div class="form-text">Mínimo 10 caracteres, máximo 2000.</div>
         </div>
+        <!-- FB PASO 7 - CU-03 FINAL -->
 
         <div class="d-flex justify-content-between">
+            <!-- FA04 - CU-03 INICIO -->
             <a th:href="@{/citas/volver/4}" class="btn btn-secondary">Volver</a>
+            <!-- FA04 - CU-03 FINAL -->
+            <!-- FB PASO 8 - CU-03 INICIO -->
             <button type="submit" class="btn btn-success">Confirmar y Pagar</button>
+            <!-- FB PASO 8 - CU-03 FINAL -->
         </div>
     </form>
 </div>

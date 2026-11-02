@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${modo} + ' Usuario'">Crear Usuario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="d-flex">
+
+    <div th:replace="~{fragments/menu :: menu-admin}"></div>
+
+    <main class="flex-grow-1 p-4">
+
+        <h2 class="mb-4" th:text="${modo} + ' Usuario'">Crear Usuario</h2>
+
+        <!-- FA06 - CU-01 INICIO -->
+        <!-- FA06: validación de guardado fallida -->
+        <div th:if="${errorMsg}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
+        </div>
+        <!-- FA06 - CU-01 FINAL -->
+
+        <div class="card">
+            <div class="card-body">
+                <!-- FA01 / FA04 - CU-01 INICIO -->
+                <form th:action="@{/admin/usuarios/guardar}" th:object="${usuario}" method="POST">
+
+                    <!-- El id decide si el guardado es creación o edición -->
+                    <input type="hidden" th:field="*{id}">
+
+                    <h6 class="text-uppercase text-muted small mb-3">Datos personales</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{nombre}" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{apellidos}" class="form-control" required>
+                            <div class="form-text">Nombre y apellidos juntos: entre 10 y 100 caracteres.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Documento de Identificación (DPI)</label>
+                            <input type="text" th:field="*{dpi}" class="form-control"
+                                   maxlength="13" pattern="\d{13}"
+                                   title="Si lo ingresa, deben ser exactamente 13 dígitos numéricos">
+                            <div class="form-text">Opcional. 13 dígitos.</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">NIT</label>
+                            <input type="text" th:field="*{nit}" class="form-control" maxlength="9">
+                            <div class="form-text">Opcional. 8 o 9 caracteres alfanuméricos.</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Número de Teléfono</label>
+                            <input type="text" th:field="*{telefono}" class="form-control"
+                                   maxlength="8" pattern="\d{8}"
+                                   title="Si lo ingresa, deben ser exactamente 8 dígitos">
+                            <div class="form-text">Opcional. 8 dígitos.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Número de Seguro</label>
+                            <input type="text" th:field="*{numeroSeguro}" class="form-control" maxlength="50">
+                            <div class="form-text">Opcional. Entre 5 y 50 caracteres.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                            <input type="email" th:field="*{email}" class="form-control" required maxlength="100">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="text-uppercase text-muted small mb-3">Credenciales</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de Usuario <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{username}" class="form-control"
+                                   required minlength="8" maxlength="9" pattern="[a-zA-Z0-9]{8,9}"
+                                   title="Entre 8 y 9 caracteres alfanuméricos">
+                            <div class="form-text">Entre 8 y 9 caracteres alfanuméricos. Debe ser único.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <span th:if="${modo == 'Crear'}">Contraseña <span class="text-danger">*</span></span>
+                                <span th:unless="${modo == 'Crear'}">Nueva Contraseña</span>
+                            </label>
+                            <input type="password" th:field="*{password}" class="form-control"
+                                   th:required="${modo == 'Crear'}" minlength="12" autocomplete="new-password">
+                            <div class="form-text">
+                                <span th:if="${modo == 'Crear'}">Mínimo 12 caracteres.</span>
+                                <span th:unless="${modo == 'Crear'}">Déjela vacía para conservar la contraseña actual.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="text-uppercase text-muted small mb-3">Asignación</h6>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Rol <span class="text-danger">*</span></label>
+                            <select th:field="*{rol}" class="form-select" id="selectRol" required>
+                                <option value="">-- Seleccione --</option>
+                                <option th:each="r : ${roles}"
+                                        th:value="${r}"
+                                        th:text="${r.descripcion}">Rol</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Sucursal
+                                <span class="text-danger" th:if="${modo == 'Crear'}">*</span></label>
+                            <select th:field="*{sucursalId}" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                <option th:each="s : ${sucursales}"
+                                        th:value="${s.id}"
+                                        th:text="${s.nombre}">Sucursal</option>
+                            </select>
+                        </div>
+
+                        <!-- RN-CU01-14: solo visible cuando el rol es Médico -->
+                        <div class="col-md-3 mb-3" id="grupoEspecialidad" style="display:none">
+                            <label class="form-label">Especialidad <span class="text-danger">*</span></label>
+                            <select th:field="*{especialidadId}" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                <option th:each="e : ${especialidades}"
+                                        th:value="${e.id}"
+                                        th:text="${e.nombre}">Especialidad</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Estado <span class="text-danger">*</span></label>
+                            <select th:field="*{activo}" class="form-select" required>
+                                <option th:value="${true}">Activo</option>
+                                <option th:value="${false}">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <!-- FA07 - CU-01 INICIO -->
+                        <!-- FA07: cancelar descarta y vuelve al listado -->
+                        <a href="/admin/usuarios" class="btn btn-outline-secondary">Cancelar</a>
+                        <!-- FA07 - CU-01 FINAL -->
+                        <button type="submit" class="btn btn-primary"
+                                th:text="${modo == 'Crear'} ? 'Crear' : 'Actualizar'">Crear</button>
+                    </div>
+                </form>
+                <!-- FA01 / FA04 - CU-01 FINAL -->
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // RN-CU01-14: el campo Especialidad solo aparece cuando el rol es MEDICO.
+    const selectRol = document.getElementById('selectRol');
+    const grupoEspecialidad = document.getElementById('grupoEspecialidad');
+
+    function alternarEspecialidad() {
+        const esMedico = selectRol.value === 'MEDICO';
+        grupoEspecialidad.style.display = esMedico ? '' : 'none';
+        if (!esMedico) {
+            grupoEspecialidad.querySelector('select').value = '';
+        }
+    }
+
+    selectRol.addEventListener('change', alternarEspecialidad);
+    alternarEspecialidad(); // estado inicial al abrir el formulario en modo Editar
+</script>
+</body>
+</html>

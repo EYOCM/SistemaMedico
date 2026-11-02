@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago de Consulta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        /* Temporizador de reserva (CU-04 paso 1 / FA02) */
+        .temporizador {
+            font-size: 2.25rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;   /* los dígitos no "bailan" al cambiar */
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .temporizador.urgente { color: var(--danger-color); }
+        .barra-tiempo { height: 6px; }
+        .barra-tiempo .progress-bar { transition: width 1s linear; }
+        .total-pagar {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5 mb-5" style="max-width: 640px;">
+
+    <!-- Mensaje que llega por flash desde el paso 5 del CU-03 -->
+    <div th:if="${success}" class="alert alert-success">
+        <i class="fas fa-circle-check me-2"></i><span th:text="${success}"></span>
+    </div>
+
+    <!--
+        FA02: banner oculto. El JavaScript lo muestra cuando el contador llega a 0.
+        El texto es literal del documento del CU-04.
+    -->
+    <div id="bannerExpirado" class="alert alert-danger d-none" role="alert">
+        <i class="fas fa-clock me-2"></i>
+        El tiempo para confirmar su cita ha expirado. El horario seleccionado ha sido
+        liberado. Por favor, seleccione un nuevo horario. Será redirigido en unos segundos...
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Pago de Consulta</h5>
+        </div>
+        <div class="card-body">
+
+            <!-- ===================== Temporizador ===================== -->
+            <!--
+                El servidor escribe los segundos restantes en data-segundos.
+                El JS solo los muestra bajando; quien decide si la reserva
+                sigue vigente es el servidor (PagoController y, al cobrar, T-04-4).
+            -->
+            <div class="text-center mb-4">
+                <div class="text-muted small mb-1">Tiempo restante para completar el pago</div>
+                <div id="temporizador" class="temporizador"
+                     th:attr="data-segundos=${cita.segundosRestantes}">5:00</div>
+                <div class="progress barra-tiempo mt-3">
+                    <div id="barraTiempo" class="progress-bar bg-primary" role="progressbar"
+                         style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- ================= Resumen de la cita ================== -->
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">Resumen de la cita</h6>
+            <table class="table table-borderless mb-3">
+                <tr><th class="text-muted fw-normal" style="width: 40%">Número de cita</th>
+                    <td class="fw-semibold" th:text="${cita.numeroCita}">CITA-20260908-1234</td></tr>
+                <tr><th class="text-muted fw-normal">Médico</th>
+                    <td th:text="${cita.nombreMedico}">Dr. Juan Pérez</td></tr>
+                <tr><th class="text-muted fw-normal">Especialidad</th>
+                    <td th:text="${cita.nombreEspecialidad}">Cardiología</td></tr>
+                <tr><th class="text-muted fw-normal">Sede</th>
+                    <td th:text="${cita.nombreSucursal}">Sucursal Central</td></tr>
+                <tr><th class="text-muted fw-normal">Fecha</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy')}">01/01/2026</td></tr>
+                <tr><th class="text-muted fw-normal">Hora</th>
+                    <td th:text="${#temporals.format(cita.fechaHora, 'HH:mm')}">08:00</td></tr>
+            </table>
+
+            <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-4">
+                <span class="fw-semibold">Total a pagar</span>
+                <!-- Formato Q1,500.00. Si la especialidad no tiene precio, se avisa en lugar de mostrar "Q". -->
+                <span class="total-pagar"
+                      th:text="${cita.monto != null} ? 'Q' + ${#numbers.formatDecimal(cita.monto, 1, 'COMMA', 2, 'POINT')} : 'Precio no configurado'">Q150.00</span>
+            </div>
+
+            <!-- ============ Formulario de tarjeta (T-04-2) ============ -->
+            <!-- Aquí va el formulario "Datos de pago" del T-04-2. Debe tener id="formPago"
+                 para que el temporizador lo deshabilite al expirar. -->
+            <div class="border rounded p-3 bg-light text-center text-muted small mb-4">
+                <i class="fas fa-lock me-1"></i>
+                El formulario de pago con tarjeta se agrega en el siguiente ticket (T-04-2).
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="/paciente/dashboard" class="btn btn-outline-secondary">Volver al portal</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const RESERVA_TOTAL = 5 * 60;        // 5 minutos (RNF-019), para la barra
+        const ESPERA_REDIRECCION = 4000;     // FA02: redirigir después de 4 s
+        const URL_RESERVA = '/citas/paso/1'; // inicio del agendamiento (la sesión del asistente ya se limpió)
+
+        const reloj  = document.getElementById('temporizador');
+        const barra  = document.getElementById('barraTiempo');
+        const banner = document.getElementById('bannerExpirado');
+
+        const segundosIniciales = parseInt(reloj.dataset.segundos, 10) || 0;
+
+        // Se calcula contra una hora de fin fija y no restando 1 en cada vuelta:
+        // si el navegador pausa la pestaña en segundo plano, el setInterval se atrasa,
+        // pero Date.now() siempre dice la hora real.
+        const fin = Date.now() + segundosIniciales * 1000;
+        let intervalo = null;
+
+        function pintar(restantes) {
+            const min = Math.floor(restantes / 60);
+            const seg = restantes % 60;
+            reloj.textContent = min + ':' + String(seg).padStart(2, '0');
+
+            barra.style.width = Math.max(0, (restantes / RESERVA_TOTAL) * 100) + '%';
+
+            const urgente = restantes <= 60;   // último minuto en rojo
+            reloj.classList.toggle('urgente', urgente);
+            barra.classList.toggle('bg-danger', urgente);
+            barra.classList.toggle('bg-primary', !urgente);
+        }
+
+        function expirar() {
+            clearInterval(intervalo);
+            pintar(0);
+            banner.classList.remove('d-none');
+            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Cuando exista el formulario (T-04-2), se bloquea para que no se pueda enviar.
+            const form = document.getElementById('formPago');
+            if (form) {
+                form.querySelectorAll('input, button, select').forEach(el => el.disabled = true);
+            }
+
+            setTimeout(() => { window.location.href = URL_RESERVA; }, ESPERA_REDIRECCION);
+        }
+
+        function tick() {
+            const restantes = Math.max(0, Math.round((fin - Date.now()) / 1000));
+            if (restantes === 0) {
+                expirar();
+            } else {
+                pintar(restantes);
+            }
+        }
+
+        tick();                              // pintar de inmediato, sin esperar 1 s
+        if (segundosIniciales > 0) {
+            intervalo = setInterval(tick, 1000);
+        }
+    })();
+</script>
+</body>
+</html>

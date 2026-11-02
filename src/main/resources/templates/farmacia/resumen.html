@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Despacho registrado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .dato { color: var(--muted-text); }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4 no-print">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/farmacia}"><i class="fas fa-prescription-bottle-medical me-2"></i>Farmacia</a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-right-from-bracket me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </div>
+</nav>
+
+<div class="container mb-5" style="max-width: 820px;" th:with="d=${resumen}">
+
+    <!-- FB PASO 12 - CU-11 INICIO -->
+    <!-- Paso 10 -->
+    <div th:if="${recienRegistrado}" class="alert alert-success no-print">
+        <i class="fas fa-circle-check me-2"></i>
+        Despacho registrado exitosamente. <span th:text="${#lists.size(d.lineas)}">2</span> medicamento(s) despachado(s).
+        Total: <strong th:text="'Q' + ${#numbers.formatDecimal(d.total, 1, 'COMMA', 2, 'POINT')}">Q36.00</strong>.
+    </div>
+    <!-- FB PASO 12 - CU-11 FINAL -->
+
+    <!-- FA02 - CU-11 INICIO -->
+    <!-- FA02 -->
+    <div th:each="s : ${d.sustituciones}" class="alert alert-info">
+        <i class="fas fa-right-left me-2"></i><span th:text="${s}"></span>
+    </div>
+    <!-- FA02 - CU-11 FINAL -->
+
+    <!-- FA04 - CU-11 INICIO -->
+    <!-- FA04 -->
+    <div th:each="a : ${d.alertasStock}" class="alert alert-warning">
+        <i class="fas fa-triangle-exclamation me-2"></i><span th:text="${a}"></span>
+    </div>
+    <!-- FA04 - CU-11 FINAL -->
+
+    <!-- FB PASO 11 - CU-11 INICIO -->
+    <!-- Paso 9 -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h5 class="mb-0">Despacho <span th:text="${d.numeroDespacho}">DESP-…</span></h5>
+                    <div class="small dato">
+                        Receta <span th:text="${d.numeroReceta}">REC-…</span> ·
+                        <span th:text="${d.nombrePaciente}">Ana</span> ·
+                        <span th:text="${d.nombreSucursal}">Sede</span>
+                    </div>
+                </div>
+                <div class="small dato text-end">
+                    <div th:text="${#temporals.format(d.fecha, 'dd/MM/yyyy HH:mm')}">fecha</div>
+                    <div th:text="'Atendió: ' + ${d.registradoPor}">farmaceutico1</div>
+                </div>
+            </div>
+            <table class="table table-sm mb-0">
+                <thead class="small dato">
+                <tr><th>Medicamento</th><th class="text-end">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${d.lineas}">
+                    <td>
+                        <span th:text="${l.nombre}">Amoxicilina</span>
+                        <div th:if="${l.sustituyeA != null}" class="small dato">
+                            Sustituye a <span th:text="${l.sustituyeA}"></span>: <span th:text="${l.razonSustitucion}"></span>
+                        </div>
+                    </td>
+                    <td class="text-end" th:text="${l.cantidad}">21</td>
+                    <td class="text-end" th:text="'Q' + ${#numbers.formatDecimal(l.precioUnitario, 1, 'COMMA', 2, 'POINT')}">Q2.50</td>
+                    <td class="text-end" th:text="'Q' + ${#numbers.formatDecimal(l.subtotal, 1, 'COMMA', 2, 'POINT')}">Q52.50</td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr class="fw-bold"><td colspan="3">Total del Despacho</td>
+                    <td class="text-end" th:text="'Q' + ${#numbers.formatDecimal(d.total, 1, 'COMMA', 2, 'POINT')}">Q52.50</td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- FB PASO 11 - CU-11 FINAL -->
+
+    <!-- FB PASO 11 - CU-11 INICIO -->
+    <div class="d-flex gap-2 mt-3 no-print">
+        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print me-1"></i>Imprimir</button>
+        <a th:href="@{/farmacia}" class="btn btn-success"><i class="fas fa-plus me-1"></i>Nuevo Despacho</a>
+    </div>
+    <!-- FB PASO 11 - CU-11 FINAL -->
+</div>
+</body>
+</html>

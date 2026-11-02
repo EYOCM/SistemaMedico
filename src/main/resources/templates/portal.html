@@ -6,113 +6,7 @@
     <title>Portal Web - Hospital Central</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #0d6efd;
-            --secondary-color: #6c757d;
-            --success-color: #198754;
-            --light-bg: #f8f9fa;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--light-bg) 0%, #e9ecef 100%);
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-        }
-
-        .hero-section {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-            color: white;
-            padding: 5rem 0;
-            margin-bottom: 3rem;
-        }
-
-        .info-card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .info-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,.15);
-        }
-
-        .info-card .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-            color: white;
-            font-weight: 600;
-            border: none;
-            padding: 1rem 1.5rem;
-        }
-
-        .info-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .info-list li {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-        }
-
-        .info-list li:last-child {
-            border-bottom: none;
-        }
-
-        .info-list li i {
-            color: var(--primary-color);
-            margin-right: 0.75rem;
-            width: 20px;
-            text-align: center;
-        }
-
-        .btn-agendar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-            border: none;
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-agendar:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-        }
-
-        .stats-section {
-            background: white;
-            padding: 3rem 0;
-            margin-top: 3rem;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .stat-label {
-            color: var(--secondary-color);
-            font-size: 1.1rem;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <!-- Navbar -->
@@ -146,6 +40,21 @@
     </div>
 </nav>
 
+<!-- FA01 / FA04 / FA05 - CU-00 INICIO -->
+<!-- Mensajes del flujo de verificacion de DPI (CU-00) -->
+<div class="container mt-3" th:if="${dpiError} or ${infoMsg}">
+    <div th:if="${dpiError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${dpiError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${infoMsg}" class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i><span th:text="${infoMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+<!-- FA01 / FA04 / FA05 - CU-00 FINAL -->
+
+<!-- FB PASOS 1-2 - CU-00 INICIO -->
 <!-- Hero Section -->
 <div class="hero-section text-center">
     <div class="container">
@@ -154,9 +63,11 @@
             Agende su cita de forma rápida y segura. Contamos con las mejores especialidades
             y profesionales de la salud para cuidar de usted y su familia.
         </p>
+        <!-- FB PASO 3 - CU-00 INICIO -->
         <button class="btn btn-light btn-lg mt-3 px-5" data-bs-toggle="modal" data-bs-target="#modalDpi">
             <i class="fas fa-calendar-check me-2"></i>Agendar Cita
         </button>
+        <!-- FB PASO 3 - CU-00 FINAL -->
     </div>
 </div>
 
@@ -256,7 +167,9 @@
         </div>
     </div>
 </div>
+<!-- FB PASOS 1-2 - CU-00 FINAL -->
 
+<!-- FB PASOS 4-7 - CU-00 INICIO -->
 <!-- Modal Verificar DPI (CU-00, Paso 4) -->
 <div class="modal fade" id="modalDpi" tabindex="-1">
     <div class="modal-dialog">
@@ -274,11 +187,16 @@
                                pattern="\d{13}" maxlength="13" required
                                title="El DPI debe contener exactamente 13 dígitos numéricos"
                                placeholder="Ej: 1234567890123">
-                        <div class="form-text">Se requieren 13 dígitos numéricos.</div>
+                        <div class="form-text d-flex justify-content-between">
+                            <span>Se requieren 13 dígitos numéricos.</span>
+                            <span id="contadorDpi" class="text-muted">0/13 dígitos</span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <!-- FA02 - CU-00 INICIO -->
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <!-- FA02 - CU-00 FINAL -->
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search me-1"></i>Verificar DPI
                     </button>
@@ -287,6 +205,7 @@
         </div>
     </div>
 </div>
+<!-- FB PASOS 4-7 - CU-00 FINAL -->
 
 <!-- Footer -->
 <footer class="bg-dark text-white py-4 mt-5">
@@ -297,5 +216,26 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    // Contador de digitos en tiempo real (CU-00 paso 4)
+    // FB PASO 5 - CU-00 INICIO
+    const inputDpi = document.getElementById('dpiInput');
+    const contador = document.getElementById('contadorDpi');
+    inputDpi.addEventListener('input', function () {
+        // Solo digitos (RN-GLOBAL-001)
+        this.value = this.value.replace(/\D/g, '');
+        contador.textContent = this.value.length + '/13 dígitos';
+        contador.className = (this.value.length === 13) ? 'text-success fw-semibold' : 'text-muted';
+    });
+    // FB PASO 5 - CU-00 FINAL
+
+    // FA01 / FA04 / FA05 - CU-00 INICIO
+    // Si el servidor devolvio un error de DPI, reabrimos el modal (FA01, FA04, FA05)
+    const hayErrorDpi = /*[[${dpiError} != null]]*/ false;
+    if (hayErrorDpi) {
+        new bootstrap.Modal(document.getElementById('modalDpi')).show();
+    }
+    // FA01 / FA04 / FA05 - CU-00 FINAL
+</script>
 </body>
 </html>

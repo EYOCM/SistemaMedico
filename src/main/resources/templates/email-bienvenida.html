@@ -5,18 +5,29 @@
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
 <div style="max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-    <h1 style="color: #0066cc; text-align: center;">¡Bienvenido al Sistema de Citas!</h1>
-    <hr style="border: 1px solid #0066cc;">
+
+    <h1 style="color: #0A1F44; text-align: center;">¡Bienvenido al Sistema de Citas!</h1>
+    <hr style="border: none; border-top: 2px solid #0A1F44;">
+
     <p>Estimado(a) <strong th:text="${nombre}">Paciente</strong>,</p>
     <p>Su registro ha sido completado exitosamente. Ya puede agendar sus citas médicas a través de nuestro portal.</p>
+
     <div style="text-align: center; margin: 30px 0;">
-        <a href="http://localhost:4200/login"
-           style="background-color: #0066cc; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;">
+        <a th:href="${urlLogin}" href="http://localhost:8081/login"
+           style="background-color: #0A1F44; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
             Iniciar Sesión
         </a>
     </div>
-    <p style="color: #666; font-size: 12px; text-align: center;">
-        Hospital General - Sistema de Citas Médicas
+
+    <!-- RN-GLOBAL-006: pie obligatorio en toda notificación por correo -->
+    <hr style="border: none; border-top: 1px solid #dddddd; margin-top: 30px;">
+    <p style="color: #666666; font-size: 12px; text-align: center; line-height: 1.6;">
+        Este es un correo automático del Sistema Informático Hospitalario.
+        No responda a este mensaje. Para consultas, comuníquese al teléfono
+        <span th:text="${telefonoContacto}">2200-0000</span>.
+    </p>
+    <p style="color: #999999; font-size: 11px; text-align: center;">
+        Hospital General &mdash; Sistema de Citas Médicas
     </p>
 </div>
 </body>
